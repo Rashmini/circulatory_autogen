@@ -1,8 +1,10 @@
 # Welcome to Circulatory Autogen
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+Circulatory Autogen aims to automate the process of combining CellML modules into a system model, then doing parameter identification to calibrate to clinical data. 
 
-## Commands
+Common use cases include generating coupled neuron models, generating neuron to cardiomyocyte models, generating patient specific 0D blood flow networks and more.
+
+<!-- ## Commands
 
 * `mkdocs new [dir-name]` - Create a new project.
 * `mkdocs serve` - Start the live-reloading docs server.
@@ -14,4 +16,4 @@ For full documentation visit [mkdocs.org](https://www.mkdocs.org).
     mkdocs.yml    # The configuration file.
     docs/
         index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+        ...       # Other markdown pages, images and other files. -->
