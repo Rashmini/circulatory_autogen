@@ -1,9 +1,8 @@
-name: Docs Release
+name: Circulatory Autogen Docs Release
 on:
   push:
     branches:
       - 'documentation'
-  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -11,14 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Print current branch and location
-        run: |
-          echo "Current branch:"
-          git rev-parse --abbrev-ref HEAD  # Prints the current branch
-          echo "Current directory:"
-          pwd  # Prints the current working directory
-          
       - name: Configure Git Credentials
         run: |
           git config user.name github-actions[bot]
@@ -34,9 +25,4 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install mkdocs-material 
-      - run: |
-          echo "Changing to 'documentation' directory"
-          cd documentation
-          echo "Current directory after cd:"
-          pwd  # Prints the directory after changing to 'documentation'
-          mkdocs gh-deploy --force
+      - run: cd documentation && mkdocs gh-deploy -b docs-gh-pages --force
