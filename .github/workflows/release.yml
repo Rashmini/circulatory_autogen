@@ -1,0 +1,42 @@
+name: Docs Release
+on:
+  push:
+    branches:
+      - 'documentation'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Print current branch and location
+        run: |
+          echo "Current branch:"
+          git rev-parse --abbrev-ref HEAD  # Prints the current branch
+          echo "Current directory:"
+          pwd  # Prints the current working directory
+          
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+      - run: pip install mkdocs-material 
+      - run: |
+          echo "Changing to 'documentation' directory"
+          cd documentation
+          echo "Current directory after cd:"
+          pwd  # Prints the directory after changing to 'documentation'
+          mkdocs gh-deploy --force
