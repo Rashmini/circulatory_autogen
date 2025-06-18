@@ -1,0 +1,2 @@
+vessel_name,                  param_name,       param_type,  min,        max,     name_for_plotting
+glucose_system,SI,        const,3000,18611.11,SI_{gs}

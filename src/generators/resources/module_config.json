@@ -1,5 +1,54 @@
 [
   {
+    "vessel_type":"glucose_insulin",
+    "BC_type":"nn",
+    "module_format":"cellml",
+    "module_file":"metabolism_modules.cellml",
+    "module_type":"ICING",
+    "entrance_ports":
+    [
+    ],
+    "exit_ports":
+    [
+    ],
+    "general_ports":
+    [
+    ],
+    "variables_and_units":
+    [
+      ["a_G", "l_per_mmol", "access", "constant"],
+      ["p_G", "per_s", "access", "constant"],
+      ["V_G", "litre", "access", "constant"],
+      ["CNS", "mmol_per_s", "access", "constant"],
+      ["x_L", "dimensionless", "access", "constant"],
+      ["n_L", "per_s", "access", "constant"],
+      ["a_I", "l_per_mmol", "access", "constant"],
+      ["n_K", "per_s", "access", "constant"],
+      ["n_C", "per_s", "access", "constant"],
+      ["n_I", "l_per_s", "access", "constant"],
+      ["V_I", "litre", "access", "constant"],
+      ["u_en", "mmol_per_s", "access", "constant"],
+      ["EGP", "mmol_per_s", "access", "constant"],
+      ["SI", "l_per_mmol_per_s", "access", "constant"],
+      ["G", "mmol_per_l", "access", "variable"],
+      ["I", "mmol_per_l", "access", "variable"],
+      ["Q", "mmol_per_l", "access", "variable"],
+      ["G_init", "mmol_per_l", "access", "constant"],
+      ["I_init", "mmol_per_l", "access", "constant"],
+      ["Q_init", "mmol_per_l", "access", "constant"],
+      ["GFast", "mmol_per_l", "access", "constant"],
+      ["D", "mmol_per_s", "access", "constant"],
+      ["d1", "per_s", "access", "constant"],
+      ["d2", "per_s", "access", "constant"],
+      ["P1_init", "mmol", "access", "constant"],
+      ["P2_init", "mmol", "access", "constant"],
+      ["V_Q", "litre", "access", "constant"],
+      ["I_original", "mmol_per_l", "access", "variable"],
+      ["Q_original", "mmol_per_l", "access", "variable"],
+      ["u_ex", "mmol_per_s", "access", "constant"]
+    ]
+  },
+  {
     "vessel_type":"arterial_simple",
     "BC_type":"vp",
     "module_format":"cellml",

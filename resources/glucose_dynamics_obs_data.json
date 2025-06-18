@@ -1,0 +1,68 @@
+{"protocol_info":
+  { "pre_times": [1500],
+  "sim_times": [[600, 5, 5455]],
+  "params_to_change": {
+    "glucose_system/D": [[0, 194.3, 0]]
+  }
+  },
+  "prediction_items":[
+  ],
+  "data_items": [
+    { 
+      "variable": "glucose_system/G",
+      "name_for_plotting": "G",
+      "data_type": "constant",
+      "operation": "mean_last_quarter",
+      "operands":["glucose_system/G"],
+      "unit": "mmol_per_l",
+      "weight": 1.0,
+      "value": 5,
+      "std": 0.1,
+      "plot_type":"horizontal",
+      "experiment_idx": 0,
+      "subexperiment_idx": 0
+    },
+    { 
+      "variable": "glucose_system/G",
+      "name_for_plotting": "G",
+      "data_type": "constant",
+      "operation": "max",
+      "operands":["glucose_system/G"],
+      "unit": "mmol_per_l",
+      "weight": 1.0,
+      "value": 8,
+      "std": 0.1,
+      "plot_type":"horizontal",
+      "experiment_idx": 0,
+      "subexperiment_idx": 2
+    },
+    { 
+      "variable": "glucose_system/G",
+      "name_for_plotting": "G",
+      "data_type": "constant",
+      "operation": "min",
+      "operands":["glucose_system/G"],
+      "unit": "mmol_per_l",
+      "weight": 1.0,
+      "value": 5,
+      "std": 0.1,
+      "plot_type":"horizontal",
+      "experiment_idx": 0,
+      "subexperiment_idx": 2
+    },
+    { 
+      "variable": "glucose_system/G",
+      "name_for_plotting": "G",
+      "data_type": "constant",
+      "operation": "mean",
+      "operands":["glucose_system/G"],
+      "unit": "mmol_per_l",
+      "weight": 1.0,
+      "value": 6.2875,
+      "std": 0.1,
+      "plot_type":"horizontal",
+      "experiment_idx": 0,
+      "subexperiment_idx": 2
+    }
+  ]
+}

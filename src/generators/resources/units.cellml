@@ -12,6 +12,26 @@
     <units name="per_millis">
         <unit exponent="-1" units="millis"/>
     </units>
+    <units name="mmol_per_l">
+        <unit prefix="milli" units="mole"/>
+        <unit exponent="-1" units="litre"/>
+    </units>
+    <units name="l_per_mmol">
+        <unit units="litre"/>
+        <unit exponent="-1" prefix="milli" units="mole"/>
+    </units>
+    <units name="l_per_mmol_per_s">
+        <unit units="litre"/>
+        <unit exponent="-1" prefix="milli" units="mole"/>
+        <unit exponent="-1" units="second"/>
+    </units>
+    <units name="mmol_per_s2">
+        <unit prefix="milli" units="mole"/>
+        <unit exponent="-2" units="second"/>
+    </units>
+    <units name="mmol">
+        <unit prefix="milli" units="mole"/>
+    </units>
     <!-- displacement-->
     <units name="mm">
         <unit prefix="milli" units="metre"/>
