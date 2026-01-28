@@ -125,6 +125,9 @@ class YamlFileParser(object):
 
         if 'couple_to_1d' not in inp_data_dict.keys():
             inp_data_dict['couple_to_1d'] = False
+        
+        if 'param_id_method' not in inp_data_dict.keys():
+            inp_data_dict['param_id_method'] = 'genetic_algorithm'
 
         # overwrite dir paths if set in user_inputs.yaml
         if "resources_dir" in inp_data_dict.keys():
