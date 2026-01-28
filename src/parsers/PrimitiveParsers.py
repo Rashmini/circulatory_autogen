@@ -160,9 +160,6 @@ class YamlFileParser(object):
                     print(f'Therefore, you must run param_id.create_params_for_id to define the parameters for identification')
                     inp_data_dict['params_for_id_path'] = None
 
-        if 'param_id_method' not in inp_data_dict.keys():
-            inp_data_dict['param_id_method'] = 'genetic_algorithm'
-
         if do_generation_with_fit_parameters:
             data_str_addon = re.sub('.json', '', os.path.split(inp_data_dict['param_id_obs_path'])[1])
             inp_data_dict['param_id_output_dir_abs_path'] = os.path.join(inp_data_dict['param_id_output_dir'], 
