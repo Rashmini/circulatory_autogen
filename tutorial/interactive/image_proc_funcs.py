@@ -1395,7 +1395,7 @@ def _order_voxel_path(path_voxels_zyx, start_node_pos_zyx):
 ### // Main (Function) // ###
 #############################
 
-def run_image_to_model(input_image_path, sub_volume):
+def run_image_to_model(image_path, output_dir, sub_volume):
 
     ############################
     ### // Ilastik Config // ###
@@ -1412,7 +1412,7 @@ def run_image_to_model(input_image_path, sub_volume):
     ### // Image(s) Config // ###
     #############################
 
-    input_file_path = input_image_path
+    input_file_path = image_path
     # input_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1)_skeletal_muscle_pc_no_raw_data.h5"
     labels_to_render_str = "2"
     hdf5_dataset_name_if_applicable = "exported_data"
@@ -2280,7 +2280,7 @@ def run_image_to_model(input_image_path, sub_volume):
                                 # Handle case where the final matrix is empty
                                 print("           Skipping verification as the matrix is empty.")
                             
-                            np.savetxt(f"label_{label_id}_{output_edge_adjacency_matrix_path}", processed_edge_adj_mtx, delimiter=',', fmt='%d')
+                            np.savetxt(output_dir / f"label_{label_id}_{output_edge_adjacency_matrix_path}", processed_edge_adj_mtx, delimiter=',', fmt='%d')
                             print(f"        Edge adjacency matrix saved.")
                             
                             # All subsequent file generation now uses the correctly filtered `processed_edge_list`
@@ -2337,7 +2337,7 @@ def run_image_to_model(input_image_path, sub_volume):
                                         connectivity_df = pd.DataFrame(list_for_segment_connectivity_df)
                                         connectivity_df['inp_vessels'] = connectivity_df['inp_vessels'].apply(lambda x: ' '.join(map(str, x)))
                                         connectivity_df['out_vessels'] = connectivity_df['out_vessels'].apply(lambda x: ' '.join(map(str, x)))
-                                        connectivity_df.to_csv(f"label_{label_id}_{output_segment_connectivity_filename}", index=False)
+                                        connectivity_df.to_csv(output_dir / f"label_{label_id}_{output_segment_connectivity_filename}", index=False)
                                         print(f"          Segment connectivity data saved.")
         
         except Exception as e_s:
@@ -2640,10 +2640,10 @@ def run_image_to_model(input_image_path, sub_volume):
     ### // Vessel Network Construction // ###
     #########################################
 
-    C_vessel_filepath = '/home/dsas627/PycharmProjects/circulatory_autogen/label_1_edge_adjacency_matrix.csv'
+    C_vessel_filepath = output_dir / 'label_1_edge_adjacency_matrix.csv'
     C_vessel = np.genfromtxt(C_vessel_filepath, delimiter=',')
 
-    network_info_filepath = '/home/dsas627/PycharmProjects/circulatory_autogen/label_1_image_to_model_vessel_xyz.csv'
+    network_info_filepath = output_dir / 'image_to_model_vessel_xyz.csv'
     network_info_df = pd.read_csv(network_info_filepath, engine='python')
     vessel_names = np.array(network_info_df['name'])
 
@@ -2663,13 +2663,13 @@ def run_image_to_model(input_image_path, sub_volume):
 
     vessel_network.generate_vessel_array()
 
-    vessel_array_csv_filepath = '/home/dsas627/PycharmProjects/circulatory_autogen/resources/image_to_model_vessel_array.csv'
+    vessel_array_csv_filepath = output_dir / 'image_to_model_vessel_array.csv'
     vessel_network.vessel_df.to_csv(vessel_array_csv_filepath, index=False)
 
     vessel_network.generate_parameter_array()
     vessel_network.populate_parameter_array()
 
-    parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/circulatory_autogen/resources/image_to_model_parameters.csv'
+    parameters_csv_abs_path_temp = output_dir / 'image_to_model_parameters.csv'
     vessel_network.parameter_df.to_csv(parameters_csv_abs_path_temp, index=False, header=True)
 
     #####################################
