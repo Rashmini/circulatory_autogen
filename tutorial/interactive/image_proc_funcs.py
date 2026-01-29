@@ -1391,18 +1391,18 @@ def _order_voxel_path(path_voxels_zyx, start_node_pos_zyx):
             
     return ordered_path
 
-##################
-### // Main // ###
-##################
+#############################
+### // Main (Function) // ###
+#############################
 
-def main():
+def run_image_to_model(input_image_path, sub_volume):
 
     ############################
     ### // Ilastik Config // ###
     ############################
 
     run_ilastik_batch_processing = False
-    
+
     ilastik_path = "/home/dsas627/Desktop/ilastik-1.4.1rc2-gpu-Linux/run_ilastik.sh"
     model_path = "/home/dsas627/Desktop/Ilastik Image Segmentations/C2-Zstack1_Animal2_NG2_dsRed_CD31_647_GLUT_15042025_vessels_processed.ilp"
     raw_images_folder = "/home/dsas627/Desktop/UCL_confocal/batch_process_input_folder/"
@@ -1412,9 +1412,9 @@ def main():
     ### // Image(s) Config // ###
     #############################
 
-    input_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1).h5" ### To become function input
+    input_file_path = input_image_path
     # input_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1)_skeletal_muscle_pc_no_raw_data.h5"
-    labels_to_render_str = "1"
+    labels_to_render_str = "2"
     hdf5_dataset_name_if_applicable = "exported_data"
     # voxel_spacing_str = "1.8660,1.8660,1.8639"
     voxel_spacing_str = "0.6251700,0.6251700,0.9030483"
@@ -1453,7 +1453,7 @@ def main():
     ### // CB Network Generation Config // ###
     ##########################################
 
-    bypass_network_gen_and_just_plot_binary_volume = True
+    bypass_network_gen_and_just_plot_binary_volume = False
 
     ### Median Filter Coefficient: 
     ### Decrease for denser less uniform networks, increase for less dense, more uniform networks
@@ -1467,7 +1467,7 @@ def main():
 
     compute_connectivity_matrix = True
     process_sub_volume = True
-    sub_volume_percentage = 1.0 ### To be become function input
+    sub_volume_percentage = sub_volume
     sub_volume_center_offset_x_percent = 0.0
     sub_volume_center_offset_y_percent = 0.0
     sub_volume_center_offset_z_percent = 0.0
@@ -1514,7 +1514,7 @@ def main():
     ########################################
 
     run_circ_autogen = False
-    
+
     #################################
     ### // Ilastik Shenanigans // ###
     #################################
@@ -1526,34 +1526,34 @@ def main():
         classifier.segment_images(input_dir=raw_images_folder,
                                 output_dir=output_folder,
                                 input_ext="*.tif")
-    
+
     ####################################################
     ### // Process Image Segmentation Shenanigans // ###
     ####################################################
 
     ### ================================================================================================
-    
+
     ### // v DEBUG: Load from batch processing output folder v // ###
 
-    output_folder_path = Path(output_folder)
-    segmentation_files = [str (p) for p in output_folder_path.glob('*.h5')]
+    # output_folder_path = Path(output_folder)
+    # segmentation_files = [str (p) for p in output_folder_path.glob('*.h5')]
 
-    segmentation_data = load_segmentation_data(segmentation_files[1], hdf5_dataset_name_if_applicable)
+    # segmentation_data = load_segmentation_data(segmentation_files[1], hdf5_dataset_name_if_applicable)
+    # if segmentation_data is None:
+    #     return
+
+    ### ================================================================================================
+
+    ### ================================================================================================
+
+    ### // v DEBUG: Load from hard-coded input file path // v ###
+
+    segmentation_data = load_segmentation_data(input_file_path, hdf5_dataset_name_if_applicable)
     if segmentation_data is None:
         return
 
     ### ================================================================================================
 
-    ### ================================================================================================
-    
-    ### // v DEBUG: Load from hard-coded input file path // v ###
-    
-    # segmentation_data = load_segmentation_data(input_file_path, hdf5_dataset_name_if_applicable)
-    # if segmentation_data is None:
-    #     return
-    
-    ### ================================================================================================
-    
     # --- INSERT THIS DEBUG BLOCK ---
     print("DEBUG: Unique values in loaded data:", np.unique(segmentation_data))
     # -------------------------------
@@ -1952,8 +1952,8 @@ def main():
                     all_nodes_world_xyz[:, 2] = all_nodes_image_zyx[:, 0] * vedo_spacing[2]
                     for node_idx, img_coords_zyx_centroid in enumerate(all_nodes_image_zyx):
                         G_undirected.add_node(node_idx, pos_zyx_image=tuple(img_coords_zyx_centroid),
-                                              pos_xyz_world=tuple(all_nodes_world_xyz[node_idx]),
-                                              type=node_types_list[node_idx])
+                                                pos_xyz_world=tuple(all_nodes_world_xyz[node_idx]),
+                                                type=node_types_list[node_idx])
                     print(f"        Added {G_undirected.number_of_nodes()} nodes to undirected graph G_undirected.")
 
                     if 'neighbor_map' not in locals() and skeleton_volume is not None:
@@ -1968,7 +1968,7 @@ def main():
                     skel_segments_only = skeleton_volume.copy()
                     skel_segments_only[all_raw_node_vox_mask] = False
                     labeled_segments, num_segments = ndimage.label(skel_segments_only,
-                                                                   structure=np.ones((3, 3, 3), dtype=bool))
+                                                                    structure=np.ones((3, 3, 3), dtype=bool))
                     print(f"        Found {num_segments} potential segments.")
 
                     # --- SEGMENT PROCESSING LOOP FOR GRAPH & FEEDING STATUS ---
@@ -1984,7 +1984,7 @@ def main():
                         vol_shape = labeled_segments.shape
 
                         for seg_id in tqdm(range(1, num_segments + 1), desc="      Segments", unit="segment",
-                                           leave=False):
+                                            leave=False):
                             
                             # 2. Get the tight slice
                             sl = segment_slices[seg_id - 1]
@@ -2076,7 +2076,7 @@ def main():
                         cell_size = grid_dims / np.array(grid_resolution_xyz)
 
                         G_discretized = discretize_network_with_grid(
-                               G_clean_undirected, grid_planes_x, grid_planes_y, grid_planes_z, vedo_spacing)
+                                G_clean_undirected, grid_planes_x, grid_planes_y, grid_planes_z, vedo_spacing)
                     else:
                         G_discretized = G_clean_undirected.copy()
 
@@ -2366,7 +2366,7 @@ def main():
 
     # --- NEW (ROBUST): Generate Actors by mapping voxel paths to filtered graph nodes ---
     print("\n      Generating new visual actors from filtered network data (Voxel-First Method)...")
-    
+
     filtered_skeleton_actors = []
     filtered_node_actors = {}
     filtered_actors_for_feeding_plot = []
@@ -2381,7 +2381,7 @@ def main():
         # 2. Build a KDTree of the final, connected nodes for fast geometric lookup
         valid_connected_node_ids = [nid for nid in connected_node_ids if nid in G_final_processed.nodes]
         if not valid_connected_node_ids:
-             print("        Warning: No valid nodes found in the filtered list. Cannot generate plot actors.")
+                print("        Warning: No valid nodes found in the filtered list. Cannot generate plot actors.")
         else:
             connected_node_coords = np.array([G_final_processed.nodes[nid]['pos_zyx_image'] for nid in valid_connected_node_ids])
             node_id_list = list(valid_connected_node_ids)
@@ -2534,26 +2534,26 @@ def main():
                     snapped_intersection_actor.name = "Snapped_Intersection_Nodes"
 
     # 6. Assemble the final actor lists for each plot, using the snapped nodes
-    
+
     # Create a list of all node actors EXCEPT the original, floating intersection nodes
     nodes_to_plot = [actor for n_type, actor in filtered_node_actors.items() if n_type != 'intersection']
-    
+
     # Add our new, snapped intersection node actor to the list
     if snapped_intersection_actor is not None:
         nodes_to_plot.append(snapped_intersection_actor)
 
     all_filtered_nodes = nodes_to_plot # This list now contains the snapped nodes
-    
+
     filtered_skeleton_junction_actors = filtered_skeleton_actors + all_filtered_nodes
     filtered_actors_for_combined_plot = surface_only_actors + filtered_skeleton_junction_actors
     filtered_actors_for_feeding_plot += all_filtered_nodes
     # --- END of new actor generation ---
-    
+
     # --- Plotting (using filtered data) ---
     # Note: Surface plots (like Plot 1 and 4) will show the COMPLETE original surface, 
     # as filtering a 3D mesh is non-trivial. The skeleton/nodes overlaid will be filtered.
 
-    plot_pls = True
+    plot_pls = False
     if plot_pls:
 
         if 'filtered_skeleton_junction_actors' in locals():
@@ -2657,10 +2657,10 @@ def main():
     vessel_mods = np.array([random.choice(vessel_mod_types) for i in range(len(vessel_names))])
 
     vessel_network = VesselNetwork(C_vessel=C_vessel,
-                                   vessel_names=vessel_names,
-                                   vessel_mods=vessel_mods,
-                                   vessel_centroids=vessel_centroids)
-    
+                                    vessel_names=vessel_names,
+                                    vessel_mods=vessel_mods,
+                                    vessel_centroids=vessel_centroids)
+
     vessel_network.generate_vessel_array()
 
     vessel_array_csv_filepath = '/home/dsas627/PycharmProjects/circulatory_autogen/resources/image_to_model_vessel_array.csv'
@@ -2689,7 +2689,3 @@ def main():
             ["python", "-u", script_path],  # -u is important for real-time printing!
             cwd=script_dir
         )
-
-if __name__ == "__main__":
-    main()
-
