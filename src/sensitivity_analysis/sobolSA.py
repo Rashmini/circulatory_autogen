@@ -131,8 +131,9 @@ class sobol_SA():
             self.pre_time = 0.001
 
         self.sim_helper = self.initialise_sim_helper()
-        self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
-        self.n_steps = int(self.sim_time/self.dt)
+        if self.sim_time is not None and self.pre_time is not None:
+            self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
+            self.n_steps = int(self.sim_time/self.dt)
 
 
         self.comm = MPI.COMM_WORLD

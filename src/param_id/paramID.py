@@ -1243,15 +1243,23 @@ class OpencorParamID():
             self.pre_time = None
 
         if self.sim_time is None:
-            self.sim_time = self.solver_info['sim_time']
+            if 'sim_time' in self.solver_info:
+                self.sim_time = self.solver_info['sim_time']
+            else:
+                self.sim_time = None
         if self.pre_time is None:
-            self.pre_time = self.solver_info['pre_time']
+            if 'pre_time' in self.solver_info:
+                self.pre_time = self.solver_info['pre_time']
+            else:
+                self.pre_time = None
 
         self.sim_helper = self.initialise_sim_helper()
 
-        self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
-
-        self.n_steps = int(self.sim_time/self.dt)
+        if self.sim_time is not None and self.pre_time is not None:
+            self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
+            self.n_steps = int(self.sim_time/self.dt)
+        else:
+            self.n_steps = None
 
         # initialise
         self.param_init = None

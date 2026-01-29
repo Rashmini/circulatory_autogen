@@ -46,7 +46,9 @@ class SimulationHelper:
             self.simulation.set_tolerance(rtol if rtol is not None else 1e-8,
                                           atol if atol is not None else 1e-8)
 
-        self._setup_time(dt, sim_time, pre_time)
+        if sim_time is not None and pre_time is not None:
+            self._setup_time(dt, sim_time, pre_time)
+
         self._build_variable_maps()
         self._init_defaults()
 
