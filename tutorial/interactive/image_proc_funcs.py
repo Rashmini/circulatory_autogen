@@ -14,7 +14,7 @@ import h5py
 import tifffile
 from scipy import ndimage
 from scipy.spatial import KDTree
-import pandas as pd76
+import pandas as pd
 import ast
 from ast import literal_eval
 from copy import copy
