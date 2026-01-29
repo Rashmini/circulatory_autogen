@@ -210,10 +210,12 @@ class YamlFileParser(object):
         if 'pre_time' in inp_data_dict.keys():
             inp_data_dict['pre_time'] = inp_data_dict['pre_time']
         else:
-            inp_data_dict['pre_time'] = None
+            inp_data_dict['pre_time'] = 0.0
+
         if 'sim_time' in inp_data_dict.keys():
             inp_data_dict['sim_time'] = inp_data_dict['sim_time']
         else:
+            print(f'sim_time not found in inp_data_dict, setting to None so it can be set in protocol_info')
             inp_data_dict['sim_time'] = None
 
         # Parse and validate the solver parameter
@@ -754,7 +756,7 @@ class ObsAndParamDataParser(object):
             gt_df = pd.DataFrame(json_obj)
             protocol_info = {"pre_times": [pre_time], 
                              "sim_times": [[sim_time]],
-                             "params_to_change": [[None]]}
+                             "params_to_change": {}}
             prediction_info = {'names': [], 'units': [], 'names_for_plotting': [], 'experiment_idxs': []}
             
 

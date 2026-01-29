@@ -284,123 +284,76 @@ class sobol_SA():
         with tqdm(total=len(local_samples), desc=f"Rank {self.rank}", position=self.rank, leave=True, disable=self.rank != 0) as pbar:
             for param_vals in local_samples:
 
-                # --- handle single vs multi subexperiment ---
-                if self.protocol_info["num_sub_total"] == 1:
-                    # simple case (one experiment only)
+                # multiple subexperiments
+                current_time = 0
+                operands_outputs_dict = {}
+                for exp_idx in range(self.protocol_info["num_experiments"]):
                     self.sim_helper.set_param_vals(self.param_id_info["param_names"], param_vals)
                     self.sim_helper.reset_states()
-                    success = self.sim_helper.run()
 
-                    operands_outputs_dict = {}
+                    for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
+                        subexp_count = int(np.sum(
+                            [num_sub for num_sub in self.protocol_info["num_sub_per_exp"][:exp_idx]]
+                        ) + this_sub_idx)
 
-                    retry_count = 0
-                    max_retries = 5
-                    original_MaximumStep = self.solver_info.get("MaximumStep", None)
-                    original_MaximumNumberOfSteps = self.solver_info.get("MaximumNumberOfSteps", None)
+                        self.sim_time = self.protocol_info["sim_times"][exp_idx][this_sub_idx]
+                        self.pre_time = self.protocol_info["pre_times"][exp_idx]
 
-                    while not success and retry_count < max_retries:
+                        if this_sub_idx == 0:
+                            self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
+                            current_time += self.pre_time
+                        else:
+                            self.sim_helper.update_times(self.dt, current_time, self.sim_time, 0.0)
 
-                        original_MaximumStep = self.solver_info.get("MaximumStep", None)
-                        reduced_MaximumStep = original_MaximumStep / 2 if original_MaximumStep else 0.001
-                        increased_MaximumNumberOfSteps = original_MaximumNumberOfSteps * 2 if original_MaximumNumberOfSteps else 1000000
-                        retry_count += 1
-                        # Reduce max_dt for retry
-                        self.solver_info["MaximumStep"] = reduced_MaximumStep
-                        self.solver_info["MaximumNumberOfSteps"] = increased_MaximumNumberOfSteps
-                                
-                        self.sim_helper.set_param_vals(self.param_id_info["param_names"], param_vals)
-                        self.sim_helper.reset_states()
+                        # set subexperiment-specific parameters
+                        self.sim_helper.set_param_vals(
+                            list(self.protocol_info["params_to_change"].keys()),
+                            [
+                                self.protocol_info["params_to_change"][param_name][exp_idx][this_sub_idx]
+                                for param_name in self.protocol_info["params_to_change"].keys()
+                            ]
+                        )
+
                         success = self.sim_helper.run()
+
+                        retry_count = 0
+                        max_retries = 0
+                        original_MaximumStep = self.solver_info.get("MaximumStep", None)
+                        original_MaximumNumberOfSteps = self.solver_info.get("MaximumNumberOfSteps", None)
+
+                        while not success and retry_count < max_retries:
+
+                            original_MaximumStep = self.solver_info.get("MaximumStep", None)
+                            reduced_MaximumStep = original_MaximumStep / 2 if original_MaximumStep else 0.001
+                            increased_MaximumNumberOfSteps = original_MaximumNumberOfSteps * 2 if original_MaximumNumberOfSteps else 1000000
+                            retry_count += 1
+                            # Reduce max_dt for retry
+                            self.solver_info["MaximumStep"] = reduced_MaximumStep
+                            self.solver_info["MaximumNumberOfSteps"] = increased_MaximumNumberOfSteps
+                            
+                            self.sim_helper.set_param_vals(self.param_id_info["param_names"], param_vals)
+                            self.sim_helper.reset_states()
+                            success = self.sim_helper.run()
 
                         # Restore original max_dt after retries
                         self.solver_info["MaximumStep"] = original_MaximumStep
                         self.solver_info["MaximumNumberOfSteps"] = original_MaximumNumberOfSteps
-                    
-                    if success:
-                        operands_outputs = self.sim_helper.get_results(self.obs_info["operands"])
-                        operands_outputs_dict[(0, 0)] = operands_outputs
+                        if success:
+                            current_time += self.sim_time
+                            operands_outputs = self.sim_helper.get_results(self.obs_info["operands"])
+                            operands_outputs_dict[(exp_idx, this_sub_idx)] = operands_outputs
 
-                        self.sim_helper.reset_and_clear()
-                    else:
-                        print(f"[MPI Rank {self.rank}] Simulation failed for params: {param_vals}, after {retry_count} retries")
-                        # Set a flag in operands_outputs_dict to indicate failure
-                        operands_outputs_dict[(0, 0)] = {"failed": True}
+                            # reset at the end of each experiment
+                            if this_sub_idx == self.protocol_info["num_sub_per_exp"][exp_idx] - 1:
+                                self.sim_helper.reset_and_clear()
+                        else:
+                            self._rank0_print(f"[MPI Rank {self.rank}] Simulation failed for params: {param_vals}, subexp={subexp_count} after {retry_count} retries")
+                            # Set a flag in operands_outputs_dict to indicate failure
+                            operands_outputs_dict[(exp_idx, this_sub_idx)] = {"failed": True}
 
-                        # reset at the end of each experiment
-                        self.sim_helper.reset_and_clear()
-
-                else:
-                    # multiple subexperiments
-                    current_time = 0
-                    operands_outputs_dict = {}
-                    for exp_idx in range(self.protocol_info["num_experiments"]):
-                        self.sim_helper.set_param_vals(self.param_id_info["param_names"], param_vals)
-                        self.sim_helper.reset_states()
-
-                        for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
-                            subexp_count = int(np.sum(
-                                [num_sub for num_sub in self.protocol_info["num_sub_per_exp"][:exp_idx]]
-                            ) + this_sub_idx)
-
-                            self.sim_time = self.protocol_info["sim_times"][exp_idx][this_sub_idx]
-                            self.pre_time = self.protocol_info["pre_times"][exp_idx]
-
-                            if self.protocol_info["num_sub_total"] > 1:
-                                if this_sub_idx == 0:
-                                    self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
-                                    current_time += self.pre_time
-                                else:
-                                    self.sim_helper.update_times(self.dt, current_time, self.sim_time, 0.0)
-
-                            # set subexperiment-specific parameters
-                            self.sim_helper.set_param_vals(
-                                list(self.protocol_info["params_to_change"].keys()),
-                                [
-                                    self.protocol_info["params_to_change"][param_name][exp_idx][this_sub_idx]
-                                    for param_name in self.protocol_info["params_to_change"].keys()
-                                ]
-                            )
-
-                            success = self.sim_helper.run()
-
-                            retry_count = 0
-                            max_retries = 0
-                            original_MaximumStep = self.solver_info.get("MaximumStep", None)
-                            original_MaximumNumberOfSteps = self.solver_info.get("MaximumNumberOfSteps", None)
-
-                            while not success and retry_count < max_retries:
-
-                                original_MaximumStep = self.solver_info.get("MaximumStep", None)
-                                reduced_MaximumStep = original_MaximumStep / 2 if original_MaximumStep else 0.001
-                                increased_MaximumNumberOfSteps = original_MaximumNumberOfSteps * 2 if original_MaximumNumberOfSteps else 1000000
-                                retry_count += 1
-                                # Reduce max_dt for retry
-                                self.solver_info["MaximumStep"] = reduced_MaximumStep
-                                self.solver_info["MaximumNumberOfSteps"] = increased_MaximumNumberOfSteps
-                                
-                                self.sim_helper.set_param_vals(self.param_id_info["param_names"], param_vals)
-                                self.sim_helper.reset_states()
-                                success = self.sim_helper.run()
-
-                            # Restore original max_dt after retries
-                            self.solver_info["MaximumStep"] = original_MaximumStep
-                            self.solver_info["MaximumNumberOfSteps"] = original_MaximumNumberOfSteps
-                            if success:
-                                current_time += self.sim_time
-                                operands_outputs = self.sim_helper.get_results(self.obs_info["operands"])
-                                operands_outputs_dict[(exp_idx, this_sub_idx)] = operands_outputs
-
-                                # reset at the end of each experiment
-                                if this_sub_idx == self.protocol_info["num_sub_per_exp"][exp_idx] - 1:
-                                    self.sim_helper.reset_and_clear()
-                            else:
-                                self._rank0_print(f"[MPI Rank {self.rank}] Simulation failed for params: {param_vals}, subexp={subexp_count} after {retry_count} retries")
-                                # Set a flag in operands_outputs_dict to indicate failure
-                                operands_outputs_dict[(exp_idx, this_sub_idx)] = {"failed": True}
-
-                                # reset at the end of each experiment
-                                if this_sub_idx == self.protocol_info["num_sub_per_exp"][exp_idx] - 1:
-                                    self.sim_helper.reset_and_clear()
+                            # reset at the end of each experiment
+                            if this_sub_idx == self.protocol_info["num_sub_per_exp"][exp_idx] - 1:
+                                self.sim_helper.reset_and_clear()
 
                 features = []
                 for j in range(len(self.obs_info["operations"])):

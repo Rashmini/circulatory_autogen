@@ -286,7 +286,7 @@ class CVS0DParamID():
     def set_param_id_method(self, param_id_method):
         self.param_id_method = param_id_method
         self.param_id.set_param_id_method(param_id_method)
-        
+
     def set_ground_truth_data(self, obs_data_dict):
         print(f'Setting ground truth data: {obs_data_dict}')
         parsed_data = self.obs_and_param_parser.parse_obs_data_json(
@@ -1233,19 +1233,19 @@ class OpencorParamID():
             if self.protocol_info['sim_times'][0][0] is not None:
                 self.sim_time = self.protocol_info['sim_times'][0][0]
             else:
-                # set temporary sim time, just to initialise the sim_helper
-                self.sim_time = 0.001
-        else:
-            self.sim_time = 0.001
-
-        if self.protocol_info is not None:
+                self.sim_time = None
             if self.protocol_info['pre_times'][0] is not None:
                 self.pre_time = self.protocol_info['pre_times'][0]
             else:
-                # set temporary pre time, just to initialise the sim_helper
-                self.pre_time = 0.001
+                self.pre_time = None
         else:
-            self.pre_time = 0.001
+            self.sim_time = None
+            self.pre_time = None
+
+        if self.sim_time is None:
+            self.sim_time = self.solver_info['sim_time']
+        if self.pre_time is None:
+            self.pre_time = self.solver_info['pre_time']
 
         self.sim_helper = self.initialise_sim_helper()
 
@@ -1304,7 +1304,7 @@ class OpencorParamID():
         self.param_id_info = param_id_info
         self.num_params = len(self.param_id_info["param_names"])
         self.param_norm_obj = Normalise_class(self.param_id_info["param_mins"], self.param_id_info["param_maxs"])
-        
+    
     def set_protocol_info(self, protocol_info):
         self.protocol_info = protocol_info
 
@@ -1430,111 +1430,83 @@ class OpencorParamID():
                                           only_one_exp=-1, pred_names=None):
 
         pred_outputs_list = []
-        if self.protocol_info["num_sub_total"] == 1:
-            # do normal cost calculation
-            # TODO technically this if chunk isn't needed, as the below works for general experiment numbers
-            # TODO but I have left it because it is much simpler and easier to understand
+        # loop through subexperiments
+        if only_one_exp == -1:
+            # unless the user wants to just to one experiment, reset must be true
+            reset = True
+            exp_idxs_to_run = range(self.protocol_info["num_experiments"])
+        else:
+            exp_idxs_to_run = [only_one_exp]
+            
+        operands_outputs_list = []
+        for exp_idx in range(self.protocol_info["num_experiments"]):
+            # set param vals for this iteration of param_id
             self.sim_helper.set_param_vals(self.param_id_info["param_names"], param_vals)
             self.sim_helper.reset_states() # this needs to be done to make sure states defined by a constant are set
-            success = self.sim_helper.run()
-            if success:
-                operands_outputs = self.sim_helper.get_results(self.obs_info["operands"])
+            current_time = 0
+            for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
+                if exp_idx not in exp_idxs_to_run:
+                    operands_outputs_list.append(None)
+                    continue
+                subexp_count = int(np.sum([num_sub for num_sub in 
+                                            self.protocol_info["num_sub_per_exp"][:exp_idx]]) + this_sub_idx)
+        
+                self.sim_time = self.protocol_info["sim_times"][exp_idx][this_sub_idx]
+                self.pre_time = self.protocol_info["pre_times"][exp_idx]
+                # resize the experiment and change parameters for this subexperiment
+                if this_sub_idx == 0:
+                    # we need a presim here 
+                    self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
+                    current_time += self.pre_time
+                else:
+                    self.sim_helper.update_times(self.dt, current_time, 
+                                                self.sim_time, 0.0)
+                # change parameters
+                self.sim_helper.set_param_vals(list(self.protocol_info["params_to_change"].keys()), 
+                                        [self.protocol_info["params_to_change"][param_name][exp_idx][this_sub_idx] for \
+                                            param_name in self.protocol_info["params_to_change"].keys()])
 
-                cost = self.get_cost_from_operands(operands_outputs)
+                success = self.sim_helper.run()
+                current_time += self.sim_time
+                if success:
+                    # TODO currently we calculate the outputs for all subexperiments, which is inefficient
+                    # TODO we could calculate the outputs for each subexperiment only when needed for the cost
+                    # TODO Fine for now, simulation time is much greater than cost calculation, so no big issue yet.
+                    operands_outputs = self.sim_helper.get_results(self.obs_info["operands"])
 
-                operands_outputs_list = [operands_outputs]
-                if pred_names is not None:
-                    pred_outputs = self.sim_helper.get_results(pred_names)
-                    pred_outputs_list.append(pred_outputs)
-                # reset params
-                if reset:
-                    self.sim_helper.reset_and_clear()
+                    operands_outputs_list.append(operands_outputs)
 
-            else:
-                # simulation set cost to large,
-                if MPI.COMM_WORLD.Get_rank() == 0:
+                    if pred_names is not None:
+                        pred_outputs = self.sim_helper.get_results(pred_names)
+                        pred_outputs_list.append(pred_outputs)
+                    
+                    # reset params
+                    if reset and this_sub_idx == self.protocol_info["num_sub_per_exp"][exp_idx] - 1:
+                        # reset if we are at the end of this experiment
+                        self.sim_helper.reset_and_clear()
+
+                else:
+                    # simulation set cost to large,
                     print('simulation failed with params...')
                     print(param_vals)
-                return np.inf, [], []
-        else:
-            # loop through subexperiments
-            if only_one_exp == -1:
-                # unless the user wants to just to one experiment, reset must be true
-                reset = True
-                exp_idxs_to_run = range(self.protocol_info["num_experiments"])
-            else:
-                exp_idxs_to_run = [only_one_exp]
-                
-            operands_outputs_list = []
-            for exp_idx in range(self.protocol_info["num_experiments"]):
-                # set param vals for this iteration of param_id
-                self.sim_helper.set_param_vals(self.param_id_info["param_names"], param_vals)
-                self.sim_helper.reset_states() # this needs to be done to make sure states defined by a constant are set
-                current_time = 0
-                for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
-                    if exp_idx not in exp_idxs_to_run:
-                        operands_outputs_list.append(None)
-                        continue
-                    subexp_count = int(np.sum([num_sub for num_sub in 
-                                               self.protocol_info["num_sub_per_exp"][:exp_idx]]) + this_sub_idx)
-            
-                    self.sim_time = self.protocol_info["sim_times"][exp_idx][this_sub_idx]
-                    self.pre_time = self.protocol_info["pre_times"][exp_idx]
-                    if self.protocol_info["num_sub_total"] > 1:
-                        # resize the experiment and change parameters for this subexperiment
-                        if this_sub_idx == 0:
-                            # we need a presim here 
-                            self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
-                            current_time += self.pre_time
-                        else:
-                            self.sim_helper.update_times(self.dt, current_time, 
-                                                        self.sim_time, 0.0)
-                    # change parameters
-                    self.sim_helper.set_param_vals(list(self.protocol_info["params_to_change"].keys()), 
-                                            [self.protocol_info["params_to_change"][param_name][exp_idx][this_sub_idx] for \
-                                                param_name in self.protocol_info["params_to_change"].keys()])
-
-                    success = self.sim_helper.run()
-                    current_time += self.sim_time
-                    if success:
-                        # TODO currently we calculate the outputs for all subexperiments, which is inefficient
-                        # TODO we could calculate the outputs for each subexperiment only when needed for the cost
-                        # TODO Fine for now, simulation time is much greater than cost calculation, so no big issue yet.
-                        operands_outputs = self.sim_helper.get_results(self.obs_info["operands"])
-
-                        operands_outputs_list.append(operands_outputs)
-
-                        if pred_names is not None:
-                            pred_outputs = self.sim_helper.get_results(pred_names)
-                            pred_outputs_list.append(pred_outputs)
-                        
-                        # reset params
-                        if reset and this_sub_idx == self.protocol_info["num_sub_per_exp"][exp_idx] - 1:
-                            # reset if we are at the end of this experiment
-                            self.sim_helper.reset_and_clear()
-
-                    else:
-                        # simulation set cost to large,
-                        print('simulation failed with params...')
-                        print(param_vals)
-                        print('failed on experiment idx = {} subexperiment idx = {}'.format(exp_idx, this_sub_idx))
-                        return np.inf, [], []
+                    print('failed on experiment idx = {} subexperiment idx = {}'.format(exp_idx, this_sub_idx))
+                    return np.inf, [], []
 
 
-            cost = 0
-            for exp_idx in exp_idxs_to_run:
-                if exp_idx not in exp_idxs_to_run:
-                    continue
-                for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
-                    subexp_count = int(np.sum([num_sub for num_sub in 
-                                               self.protocol_info["num_sub_per_exp"][:exp_idx]]) + this_sub_idx)
+        cost = 0
+        for exp_idx in exp_idxs_to_run:
+            if exp_idx not in exp_idxs_to_run:
+                continue
+            for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
+                subexp_count = int(np.sum([num_sub for num_sub in 
+                                            self.protocol_info["num_sub_per_exp"][:exp_idx]]) + this_sub_idx)
 
-                    sub_cost = self.get_cost_from_operands(operands_outputs_list[subexp_count], 
-                                                               exp_idx=exp_idx, sub_idx=this_sub_idx)   
-                    cost += sub_cost
-            
-            # average cost over all subexperiments so that it is comparable between diff number of subexperiments
-            cost = cost/self.protocol_info["num_sub_total"] 
+                sub_cost = self.get_cost_from_operands(operands_outputs_list[subexp_count], 
+                                                            exp_idx=exp_idx, sub_idx=this_sub_idx)   
+                cost += sub_cost
+        
+        # average cost over all subexperiments so that it is comparable between diff number of subexperiments
+        cost = cost/self.protocol_info["num_sub_total"] 
 
         return cost, operands_outputs_list, pred_outputs_list
 
@@ -2249,7 +2221,7 @@ class MCMC_plotter:
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.Get_rank()
         
-        self.param_id_obs_file_prefix = re.sub('\.json', '', os.path.split(param_id_obs_path)[1])
+        self.param_id_obs_file_prefix = re.sub(r"\.json", "", os.path.split(param_id_obs_path)[1])
         case_type = f'{param_id_method}_{file_name_prefix}_{self.param_id_obs_file_prefix}'
         if self.rank == 0:
             if param_id_output_dir is None:
