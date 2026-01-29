@@ -256,6 +256,8 @@ def test_param_id_3compartment_python_succeeds(base_user_inputs, resources_dir, 
             f"{config['param_id_method']}_{config['file_prefix']}_3compartment_obs_data"
         )
         assert os.path.exists(output_dir), f"Output directory should exist: {output_dir}"
+    
+        plot_param_id(config, generate=True)
 
     mpi_comm.Barrier()
 

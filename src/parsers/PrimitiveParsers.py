@@ -123,6 +123,12 @@ class YamlFileParser(object):
         else:
             file_prefix = inp_data_dict['file_prefix']
 
+        if 'couple_to_1d' not in inp_data_dict.keys():
+            inp_data_dict['couple_to_1d'] = False
+        
+        if 'param_id_method' not in inp_data_dict.keys():
+            inp_data_dict['param_id_method'] = 'genetic_algorithm'
+
         # overwrite dir paths if set in user_inputs.yaml
         if "resources_dir" in inp_data_dict.keys():
             inp_data_dict['resources_dir'] = os.path.join(user_files_dir, inp_data_dict['resources_dir'])
@@ -204,10 +210,12 @@ class YamlFileParser(object):
         if 'pre_time' in inp_data_dict.keys():
             inp_data_dict['pre_time'] = inp_data_dict['pre_time']
         else:
-            inp_data_dict['pre_time'] = None
+            inp_data_dict['pre_time'] = 0.0
+
         if 'sim_time' in inp_data_dict.keys():
             inp_data_dict['sim_time'] = inp_data_dict['sim_time']
         else:
+            print(f'sim_time not found in inp_data_dict, setting to None so it can be set in protocol_info')
             inp_data_dict['sim_time'] = None
 
         # Parse and validate the solver parameter
@@ -244,12 +252,33 @@ class YamlFileParser(object):
         if 'solver_info' not in inp_data_dict.keys(): 
             inp_data_dict['solver_info'] = get_solver_info_default(inp_data_dict['model_type'])
         else:
-            if 'MaximumStep' not in inp_data_dict['solver_info'].keys():
-                inp_data_dict['solver_info']['MaximumStep'] = get_solver_info_default(inp_data_dict['model_type'])['MaximumStep']
             if 'MaximumNumberOfSteps' not in inp_data_dict['solver_info'].keys():
                 inp_data_dict['solver_info']['MaximumNumberOfSteps'] = get_solver_info_default(inp_data_dict['model_type'])['MaximumNumberOfSteps']
         if 'solver' not in inp_data_dict['solver_info'].keys():
             inp_data_dict['solver_info']['solver'] = solver_name
+        elif inp_data_dict.get('model_type') == 'cpp':
+            if solver_name.startswith('RK4'):
+                inp_data_dict['solver_info']['solver'] = 'RK4'
+                solver_name = 'RK4'
+            elif solver_name.startswith('CVODE'):
+                inp_data_dict['solver_info']['solver'] = 'CVODE'
+                solver_name = 'CVODE'
+            elif solver_name.startswith('PETSC'):
+                inp_data_dict['solver_info']['solver'] = 'PETSC'
+                solver_name = 'PETSC'
+
+        solver_info = inp_data_dict['solver_info']
+        dt_solver = solver_info.get('dt_solver')
+        if dt_solver is None:
+            dt_solver = solver_info.get('MaximumStep')
+        if dt_solver is not None:
+            solver_info['dt_solver'] = dt_solver
+        if solver_info.get('solver', '').startswith('CVODE') and dt_solver is not None:
+            solver_info['MaximumStep'] = dt_solver
+        if 'MaximumStep' not in solver_info.keys():
+            solver_info['MaximumStep'] = get_solver_info_default(inp_data_dict['model_type'])['MaximumStep']
+        if 'dt_solver' not in solver_info.keys():
+            solver_info['dt_solver'] = solver_info['MaximumStep']
 
         if 'solver' in inp_data_dict:
             del inp_data_dict['solver']
@@ -446,6 +475,20 @@ class YamlFileParser(object):
     
         inp_data_dict['vessels_csv_abs_path'] = os.path.join(inp_data_dict['resources_dir'], file_prefix + '_vessel_array.csv')
         inp_data_dict['parameters_csv_abs_path'] = os.path.join(inp_data_dict['resources_dir'], inp_data_dict['input_param_file'])
+
+        if inp_data_dict.get('model_type') == 'cpp' and inp_data_dict.get('couple_to_1d'):
+            file_prefix_0d = file_prefix + '_0d'
+            file_prefix_1d = file_prefix + '_1d'
+
+            vessels_csv_abs_path = inp_data_dict['vessels_csv_abs_path']
+            idx_last = vessels_csv_abs_path.rfind(file_prefix)
+            vessel_filename_0d = vessels_csv_abs_path[:idx_last] + file_prefix_0d + vessels_csv_abs_path[idx_last+len(file_prefix):]
+            vessel_filename_1d = vessels_csv_abs_path[:idx_last] + file_prefix_1d + vessels_csv_abs_path[idx_last+len(file_prefix):]
+
+            inp_data_dict['file_prefix_0d'] = file_prefix_0d
+            inp_data_dict['file_prefix_1d'] = file_prefix_1d
+            inp_data_dict['vessels_0d_csv_abs_path'] = vessel_filename_0d
+            inp_data_dict['vessels_1d_csv_abs_path'] = vessel_filename_1d
 
         return inp_data_dict
 
@@ -713,7 +756,7 @@ class ObsAndParamDataParser(object):
             gt_df = pd.DataFrame(json_obj)
             protocol_info = {"pre_times": [pre_time], 
                              "sim_times": [[sim_time]],
-                             "params_to_change": [[None]]}
+                             "params_to_change": {}}
             prediction_info = {'names': [], 'units': [], 'names_for_plotting': [], 'experiment_idxs': []}
             
 
@@ -739,7 +782,7 @@ class ObsAndParamDataParser(object):
                           "If this is the case sim_time and pre_time must be set",
                           "in the user_inputs.yaml file")
                     exit()
-                protocol_info = {"pre_times": [pre_time], "sim_times": [[sim_time]], "params_to_change": [[None]]}
+                protocol_info = {"pre_times": [pre_time], "sim_times": [[sim_time]], "params_to_change": {}}
 
             # Load Prediction Info
             if 'prediction_items' in json_obj.keys():

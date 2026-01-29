@@ -22,6 +22,11 @@ class ObsDataCreator:
         entry the same shape as sim_times.
         experiment_labels: list of labels for each experiment
         """
+        # check pre_times is list and sim_times 2D list of lists
+        if not isinstance(pre_times, list):
+            raise ValueError("pre_times should be a list")
+        if not isinstance(sim_times, list) or not all(isinstance(sublist, list) for sublist in sim_times):
+            raise ValueError("sim_times should be a 2D list of lists")
         # check sizes of lists are correct
         num_exps = len(sim_times)
         if len(pre_times) != num_exps:

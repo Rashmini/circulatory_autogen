@@ -40,8 +40,9 @@ class CVS0DCellMLGenerator(object):
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)
         self.file_prefix = inp_data_dict['file_prefix']
-        if 'couple_to_1d' in inp_data_dict.keys() and inp_data_dict['couple_to_1d']:
-            self.file_prefix += '_0d'
+        # TODO removing 0D suffix here
+        # if 'couple_to_1d' in inp_data_dict.keys() and inp_data_dict['couple_to_1d']:
+        #     self.file_prefix += '_0d'
         self.inp_data_dict = inp_data_dict
 
         if inp_data_dict['resources_dir'] is None:
@@ -67,6 +68,7 @@ class CVS0DCellMLGenerator(object):
         self.all_parameters_defined = False
         self.BC_set = {}
         self.all_units = []
+        self.DEBUG = inp_data_dict['DEBUG'] 
 
         # this is a temporary hack to include zero flow ivc if only one input to heart TODO make more robust
         self.ivc_connection_done = 0
@@ -110,12 +112,15 @@ class CVS0DCellMLGenerator(object):
             a.analyseModel(flat_model)
             analysed_model = a.model()
 
-            libcellml_utils.print_issues(a)
+            if self.DEBUG:
+                # parse_model seems to print most of the necessary issues, so we don't need to print them here
+                # unless debugging... To check with Hugh
+                libcellml_utils.print_issues(a)
             print(f"analysed model has type {analysed_model.type()} . Is it ODE type? {analysed_model.type()==AnalyserModel.Type.ODE}")
             # print(analysed_model.type())
             # Debug: show how libCellML classifies variables (constant vs variable vs state, etc.)
             try:
-                # Always dump for init-states reproducer, otherwise only in DEBUG.
+                # Always dump for init-states reproducer, otherwise don't, even in DEBUG.
                 print_consts_etc = False
                 if print_consts_etc or self.file_prefix == "test_init_states":
                     from libcellml import AnalyserVariable

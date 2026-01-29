@@ -2,6 +2,7 @@
 DEBUG: false # TODO change back
 
 # user_inputs_path_override: false
+
 # user_inputs_path_override: /home/bghi639/Software/circulatory_autogen_TUTORIAL/trainingschool01/20250318-day01/simple_physiological_nonlinear_visco/simple_physiological_user_inputs.yaml
 # user_inputs_path_override: /home/bghi639/Software/circulatory_autogen_TUTORIAL/trainingschool01/20250320-day03/smc_with_piezo/smc_with_piezo_user_inputs.yaml
 # user_inputs_path_override: /home/bghi639/Software/circulatory_autogen_TUTORIAL/trainingschool01/20250321-day04/coupled_CVS_smc/coupled_CVS_smc_user_inputs.yaml
@@ -50,16 +51,17 @@ user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials
 # user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_with_arm_0d_cpp/cvs_model_with_arm_0d_user_inputs.yaml
 # user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_with_arm_hybrid/cvs_model_with_arm_hybrid_user_inputs.yaml
 
-file_prefix: 3compartment
+# file_prefix: 3compartment
 # file_prefix: aortic_bif_0d
 # file_prefix: aortic_bif_0d_super_random_nonlinear
 # file_prefix: generic_junction_test_openloop
 # file_prefix: generic_junction_test_closedloop
+file_prefix: undefined
 
 # input_param_file must be stored in resources. If first creating a parameters file 
 # set this to parameters_orig.csv and a 
 # parameters file will be generated with spaces for the required parameters
-input_param_file: SN_simple_parameters.csv
+input_param_file: undefined_parameters.csv
 
 # cpp generation inputs
 # model_type can be cellml_only, cpp, or python atm 
@@ -83,9 +85,11 @@ sim_time: 2
 # and set the pre_time and sim_time accordingly.
 
 # it is recommended that users create their own CA_user directory to store input resources and output generated model files. e.g.
-# resources_dir: /home/farg967/Documents/git_projects/CA_user/3compartment/resources
+resources_dir: /home/farg967/Documents/temp/test_for_phlynx_cvs/resources
 # generated_models_dir: /home/farg967/Documents/git_projects/CA_user/3compartment/generated_models
 # param_id_output_dir: /home/farg967/Documents/git_projects/CA_user/3compartment/param_id_output
+external_modules_dir: /home/farg967/Documents/temp/test_for_phlynx_cvs/module_config
+
 
 # This is for cpp generation
 # cpp_generated_models_dir: /home/farg967/software/venous_system/lucas_model/fvm

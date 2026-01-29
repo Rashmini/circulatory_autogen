@@ -1,4 +1,14 @@
+import warnings
+
 import opencor as oc
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"The value of the smallest subnormal for <class 'numpy\.float64'> type is zero\.",
+    category=UserWarning,
+    module=r"numpy\.core\.getlimits",
+)
+
 import numpy as np
 import os
 import sys
@@ -16,20 +26,26 @@ class SimulationHelper():
 
         self.cellml_path = cellml_path  # path to cellml file
         self.dt = dt  # time step
-        self.stop_time = pre_time + sim_time  # full time of simulation
-        self.pre_steps = int(pre_time/dt)  # number of steps to do before storing data (used to reach steady state)
-        self.n_steps = int(sim_time/dt)  # number of steps for storing data
+        if sim_time is not None and pre_time is not None:
+            self.stop_time = pre_time + sim_time  # full time of simulation
+            self.pre_steps = int(pre_time/dt)  # number of steps to do before storing data (used to reach steady state)
+            self.n_steps = int(sim_time/dt)  # number of steps for storing data
+        else:
+            self.stop_time = None
+            self.pre_steps = None
+            self.n_steps = None
+
         self.simulation = oc.open_simulation(cellml_path)
         if not self.simulation.valid():
             raise ValueError(f'simulation object opened from {cellml_path} is not valid')
         self.data = self.simulation.data()
         if solver_info is None:
             solver_info = {'MaximumNumberOfSteps': 5000, 'MaximumStep': 0.0001}
+        
+        valid_unused_keys=["method", "solver", "dt_solver"]
         for key, value in solver_info.items():
             # ignore high-level/legacy keys that aren't part of OpenCOR solver properties
-            if key.lower() == "method":
-                continue
-            if key.lower() == "solver":
+            if key.lower() in valid_unused_keys:
                 continue
             if key not in self.data.odeSolverProperties():
                 print(f'{key} is not a valid key for CVODE solver properties; valid keys are '
@@ -38,8 +54,11 @@ class SimulationHelper():
             self.data.set_ode_solver_property(key, value)
         self.data.set_point_interval(self.dt)  # time interval for data storage
         self.data.set_starting_point(0)
-        self.data.set_ending_point(self.stop_time)
-        self.tSim = np.linspace(pre_time, self.stop_time, self.n_steps + 1)  # time values for stored part of simulation
+        if pre_time is not None and sim_time is not None:
+            self.data.set_ending_point(self.stop_time)
+            self.tSim = np.linspace(pre_time, self.stop_time, self.n_steps + 1)  # time values for stored part of simulation
+        else:
+            self.tSim = None
         
     def get_time(self, include_pre_time=False):
         if include_pre_time:

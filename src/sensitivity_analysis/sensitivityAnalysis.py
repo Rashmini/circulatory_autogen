@@ -149,3 +149,73 @@ class SensitivityAnalysis():
             self.SA_manager.plot_sobol_first_order_idx(S1_all, ST_all)
             self.SA_manager.plot_sobol_S2_idx(S2_all)
             self.SA_manager.plot_sobol_heatmap(S1_all, ST_all)
+
+    
+    def choose_most_impactful_params_sobol(self, top_n=5, index_type='ST', criterion='max', threshold=0.01, use_threshold=False):
+        """
+        Ranks and returns parameters based on Sobol indices.
+        
+        Args:
+            top_n (int): Max number of parameters to return.
+            index_type (str): 'ST' or 'S1'.
+            criterion (str or func): 'max', 'mean', or custom lambda.
+            threshold (float): Minimum score required. Only applied if use_threshold=True.
+            use_threshold (bool): Whether to reject parameters below the threshold.
+        """
+        comm = MPI.COMM_WORLD
+        if comm.Get_rank() != 0:
+            return None
+
+        indices_dict = self.SA_manager.load_sobol_indices()
+        if not indices_dict or index_type.upper() not in indices_dict:
+            print(f"{RED}ERROR: Index type '{index_type}' not found.{RESET}")
+            return []
+
+        data = indices_dict[index_type.upper()]
+        
+        # Flatten structure: {param_name: [val_out1, val_out2, ...]}
+        param_scores_list = {}
+        for out_name, params in data.items():
+            for p_name, val in params.items():
+                if p_name not in param_scores_list:
+                    param_scores_list[p_name] = []
+                param_scores_list[p_name].append(val)
+
+        # Mapping criterion to calculation
+        if criterion == 'max':
+            calc_func = max
+        elif criterion == 'mean':
+            calc_func = lambda x: sum(x) / len(x)
+        elif callable(criterion):
+            calc_func = criterion
+        else:
+            print(f"{RED}ERROR: Invalid criterion '{criterion}'{RESET}")
+            return []
+
+        # 1. Calculate scores
+        processed_scores = {p: calc_func(vals) for p, vals in param_scores_list.items()}
+
+        # 2. Filter only if requested
+        if use_threshold:
+            filtered_data = {p: s for p, s in processed_scores.items() if s >= threshold}
+            status_msg = f"filtered by threshold >= {threshold}"
+        else:
+            filtered_data = processed_scores
+            status_msg = "unfiltered"
+
+        # 3. Sort and select
+        sorted_items = sorted(filtered_data.items(), key=lambda x: x[1], reverse=True)
+        top_items = sorted_items[:top_n]
+        top_params = [item[0] for item in top_items]
+
+        # 4. Final output
+        if not top_params:
+            print(f"{RED}No parameters found for criterion '{criterion}' ({status_msg}).{RESET}")
+            return []
+
+        print(f"{GREEN}Selected {len(top_params)} parameters (Criteria: {criterion}, Mode: {status_msg}):{RESET}")
+        for i, (p, score) in enumerate(top_items):
+            print(f"  {i+1}. {p:<35} | Score: {score:.4f}")
+            
+        return top_params
+

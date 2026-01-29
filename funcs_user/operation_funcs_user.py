@@ -436,6 +436,23 @@ def mean_peak_to_trough_time(t, V, series_output=False, spike_min_thresh=None, d
     return t_diff
 
 @series_to_constant
+def max_minus_min_divided_by_mean_in_range(x, start_frac=0.0, end_frac=1.0, series_output=False):
+    # calculate the max minus min for the first max and min in a range.
+    # for example: tidal volume = max(x) - min(x)
+       
+    start_idx = int(start_frac*(len(x)-1))
+    end_idx = int(end_frac*(len(x)-1))
+    range_values_max = np.max(x[start_idx:end_idx])
+    range_values_min = np.min(x[start_idx:end_idx])
+    range_values_mean = np.mean(x[start_idx:end_idx])
+    max_minus_min_divided_by_mean = (range_values_max - range_values_min)/range_values_mean
+
+    if series_output:
+        return x
+    else:
+        return max_minus_min_divided_by_mean
+
+@series_to_constant
 def max_minus_min_in_range(x, start_frac=0.0, end_frac=1.0, series_output=False):
     # calculate the max minus min for the first max and min in a range.
     # for example: tidal volume = max(x) - min(x)
