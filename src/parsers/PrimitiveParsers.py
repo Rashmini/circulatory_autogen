@@ -782,7 +782,7 @@ class ObsAndParamDataParser(object):
                           "If this is the case sim_time and pre_time must be set",
                           "in the user_inputs.yaml file")
                     exit()
-                protocol_info = {"pre_times": [pre_time], "sim_times": [[sim_time]], "params_to_change": [[None]]}
+                protocol_info = {"pre_times": [pre_time], "sim_times": [[sim_time]], "params_to_change": {}}
 
             # Load Prediction Info
             if 'prediction_items' in json_obj.keys():
