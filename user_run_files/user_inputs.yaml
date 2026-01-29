@@ -44,6 +44,7 @@ DEBUG: false # TODO change back
 
 # user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_0d/cvs_model_0d_user_inputs.yaml
 # user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_0d_cpp/cvs_model_0d_user_inputs.yaml
+# user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_new_heart_0d_cpp/cvs_model_new_heart_0d_user_inputs.yaml
 user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_hybrid/cvs_model_hybrid_user_inputs.yaml
 # user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_with_arm_0d/cvs_model_with_arm_0d_user_inputs.yaml
 # user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_with_arm_0d_cpp/cvs_model_with_arm_0d_user_inputs.yaml
