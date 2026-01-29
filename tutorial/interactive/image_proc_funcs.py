@@ -778,7 +778,7 @@ class VesselNetwork():
                                         'data_reference': 'TO_DO'}
                 self.parameter_df = pd.concat([self.parameter_df, pd.DataFrame([new_row])], ignore_index=True)
 
-        parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/image_to_model_parameters.csv'
+        parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/test_dale_parameters.csv'
         self.parameter_df.to_csv(parameters_csv_abs_path_temp, index=False, header=True)
                     
         print('DONE :: Parameters array file for model '+file_prefix+' generated and saved.')
@@ -1412,7 +1412,7 @@ def main():
     ### // Image(s) Config // ###
     #############################
 
-    input_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1).h5" ### To become function input
+    input_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1).h5"
     # input_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1)_skeletal_muscle_pc_no_raw_data.h5"
     labels_to_render_str = "1"
     hdf5_dataset_name_if_applicable = "exported_data"
@@ -1467,7 +1467,7 @@ def main():
 
     compute_connectivity_matrix = True
     process_sub_volume = True
-    sub_volume_percentage = 1.0 ### To be become function input
+    sub_volume_percentage = 1.0
     sub_volume_center_offset_x_percent = 0.0
     sub_volume_center_offset_y_percent = 0.0
     sub_volume_center_offset_z_percent = 0.0
@@ -2663,13 +2663,13 @@ def main():
     
     vessel_network.generate_vessel_array()
 
-    vessel_array_csv_filepath = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/image_to_model_vessel_array.csv'
+    vessel_array_csv_filepath = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/test_dale_vessel_array.csv'
     vessel_network.vessel_df.to_csv(vessel_array_csv_filepath, index=False)
 
     vessel_network.generate_parameter_array()
     vessel_network.populate_parameter_array()
 
-    parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/image_to_model_parameters.csv'
+    parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/test_dale_parameters.csv'
     vessel_network.parameter_df.to_csv(parameters_csv_abs_path_temp, index=False, header=True)
 
     #####################################

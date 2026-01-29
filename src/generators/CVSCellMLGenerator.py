@@ -772,42 +772,21 @@ class CVS0DCellMLGenerator(object):
                         # when doing the venous_terminal_connection. Fine for now.
                         pass
 
-                    elif module_row["vessel_type"].startswith(('Nout_', 'MinNout_', 'Minlet_')):
+                    elif module_row["vessel_type"].startswith(('Nout_', 'MinNout_')):
                         # the generic junction connections are done through the generic_junction_connection
                         pass
 
-                    elif module_row["vessel_type"].endswith(('_Nout', '_MinNout', '_Minlet')):
+                    elif out_module_row["vessel_type"].startswith(('Min_', 'MinNout_')):
                         # the generic junction connections are done through the generic_junction_connection
                         pass
 
-                    elif out_module_row["vessel_type"].startswith(('Min_', 'MinNout_', 'Noutlet_')):
-                        # the generic junction connections are done through the generic_junction_connection
-                        pass
-
-                    elif out_module_row["vessel_type"].endswith(('_Min', '_MinNout', '_Noutlet')):
-                        # the generic junction connections are done through the generic_junction_connection
-                        pass
-
-                    elif (any(module_df.loc[module_df["name"] == vess, "vessel_type"].iloc[0].startswith(("Min_", "MinNout_", "Noutlet_"))
-                            for vess in module_row["out_vessels"])):
-                        # the generic junction connections are done through the generic_junction_connection
-                        pass
-
-                    elif (any(module_df.loc[module_df["name"] == vess, "vessel_type"].iloc[0].endswith(("_Min", "_MinNout","_Noutlet"))
+                    elif (any(module_df.loc[module_df["name"] == vess, "vessel_type"].iloc[0].startswith(("Min_", "MinNout_"))
                             for vess in module_row["out_vessels"])):
                         # the generic junction connections are done through the generic_junction_connection
                         pass
 
                     elif (any(
-                            any(module_df.loc[module_df["name"] == temp_inp_vess, "vessel_type"].iloc[0].startswith(("Nout_", "MinNout_", "Minlet_"))
-                                for temp_inp_vess in module_df.loc[module_df["name"] == temp_out_vess, "inp_vessels"].values[0])
-                                    for temp_out_vess in module_row["out_vessels"]
-                                        if not module_df.loc[module_df["name"] == temp_out_vess, "BC_type"].iloc[0].startswith("nn"))):
-                        # the generic junction connections are done through the generic_junction_connection
-                        pass
-
-                    elif (any(
-                            any(module_df.loc[module_df["name"] == temp_inp_vess, "vessel_type"].iloc[0].endswith(("_Nout", "_MinNout", "_Minlet"))
+                            any(module_df.loc[module_df["name"] == temp_inp_vess, "vessel_type"].iloc[0].startswith(("Nout_", "MinNout_"))
                                 for temp_inp_vess in module_df.loc[module_df["name"] == temp_out_vess, "inp_vessels"].values[0])
                                     for temp_out_vess in module_row["out_vessels"]
                                         if not module_df.loc[module_df["name"] == temp_out_vess, "BC_type"].iloc[0].startswith("nn"))):
@@ -836,19 +815,7 @@ class CVS0DCellMLGenerator(object):
                         #XXX THIS IS NEEDED!!!
                         for iV, temp_out_vess in enumerate(module_row["out_vessels"]):
                             temp_out_vess_BC_type = module_df.loc[module_df["name"] == temp_out_vess, "vessel_type"].iloc[0]
-                            if temp_out_vess_BC_type.startswith(("Min_", "MinNout_", "Noutlet_")) or temp_out_vess_BC_type.startswith("MinNout_"):
-                                temp_out_module_row = module_df.loc[module_df["name"] == temp_out_vess].squeeze()
-                                multi_port_found = False
-                                for iP in range(len(temp_out_module_row["entrance_ports"])):
-                                    if 'multi_port' in temp_out_module_row["entrance_ports"][iP].keys():
-                                        if (temp_out_module_row["entrance_ports"][iP]["port_type"]=='vessel_port' 
-                                            and temp_out_module_row["entrance_ports"][iP]['multi_port'] in ['True', True]):
-                                            multi_port_found = True
-                                            pass_port = True
-                                            break
-                                if multi_port_found:
-                                    break
-                            elif temp_out_vess_BC_type.endswith(("_Min", "_MinNout", "_Noutlet")) or temp_out_vess_BC_type.endswith("_MinNout"):
+                            if temp_out_vess_BC_type.startswith("Min_") or temp_out_vess_BC_type.startswith("MinNout_"):
                                 temp_out_module_row = module_df.loc[module_df["name"] == temp_out_vess].squeeze()
                                 multi_port_found = False
                                 for iP in range(len(temp_out_module_row["entrance_ports"])):
@@ -913,19 +880,7 @@ class CVS0DCellMLGenerator(object):
                             #XXX THIS IS NEEDED!!!
                             for iV, temp_inp_vess in enumerate(out_module_row["inp_vessels"]):
                                 temp_inp_vess_BC_type = module_df.loc[module_df["name"] == temp_inp_vess, "vessel_type"].iloc[0]
-                                if temp_inp_vess_BC_type.startswith(("Nout_", "MinNout_", "Minlet_")) or temp_inp_vess_BC_type.startswith("MinNout_"):
-                                    temp_inp_module_row = module_df.loc[module_df["name"] == temp_inp_vess].squeeze()
-                                    multi_port_found = False
-                                    for iP in range(len(temp_inp_module_row["exit_ports"])):
-                                        if 'multi_port' in temp_inp_module_row["exit_ports"][iP].keys():
-                                            if (temp_inp_module_row["exit_ports"][iP]["port_type"]=='vessel_port' 
-                                                and temp_inp_module_row["exit_ports"][iP]['multi_port']):
-                                                multi_port_found = True
-                                                pass_port = True
-                                                break
-                                    if multi_port_found:
-                                        break 
-                                elif temp_inp_vess_BC_type.endswith(("_Nout", "_MinNout", "_Minlet")) or temp_inp_vess_BC_type.endswith("_MinNout"):
+                                if temp_inp_vess_BC_type.startswith("Nout_") or temp_inp_vess_BC_type.startswith("MinNout_"):
                                     temp_inp_module_row = module_df.loc[module_df["name"] == temp_inp_vess].squeeze()
                                     multi_port_found = False
                                     for iP in range(len(temp_inp_module_row["exit_ports"])):
