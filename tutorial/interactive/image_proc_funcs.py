@@ -1479,10 +1479,10 @@ def main():
     pressure_outlet_value = 666.612
     # New configuration for segment connectivity DataFrame
     generate_segment_connectivity_file = True
-    output_segment_connectivity_filename = "WKY_B_2x2x2_vessel_array.csv"  # Base name
+    output_segment_connectivity_filename = "image_to_model_vessel_xyz.csv"  # Base name
     # New configuration for the vessel parameters DataFrame
     generate_vessel_parameters_file = True
-    output_vessel_parameters_filename = "WKY_B_2x2x2_parameters.csv"
+    output_vessel_parameters_filename = "image_to_model_parameters.csv"
     # --- NEW: Glomus Cell Superimposition ---
     render_with_glomus_cells = False
     glomus_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1)_glomus_cells.h5"  # <-- IMPORTANT: SET THIS FILE PATH
@@ -1505,7 +1505,7 @@ def main():
     output_vessels_by_block_filename = "vessels_by_block.csv"
     # --- NEW: Vessel and Volume Element Array ---
     generate_vessel_and_volume_array_file = True
-    output_vessel_and_volume_array_filename = "WKY_B_2x2x2_vessel_and_volume_element_array.csv"
+    output_vessel_and_volume_array_filename = "image_to_model_vessel_and_volume_element_array.csv"
     # --- NEW: Processing for Circulatory Autogen ---
     run_processing_for_circ_autogen = True
 
@@ -2640,10 +2640,10 @@ def main():
     ### // Vessel Network Construction // ###
     #########################################
 
-    C_vessel_filepath = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/label_1_edge_adjacency_matrix.csv'
+    C_vessel_filepath = '/home/dsas627/PycharmProjects/circulatory_autogen/label_1_edge_adjacency_matrix.csv'
     C_vessel = np.genfromtxt(C_vessel_filepath, delimiter=',')
 
-    network_info_filepath = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/label_1_WKY_B_2x2x2_vessel_array.csv'
+    network_info_filepath = '/home/dsas627/PycharmProjects/circulatory_autogen/label_1_image_to_model_vessel_xyz.csv'
     network_info_df = pd.read_csv(network_info_filepath, engine='python')
     vessel_names = np.array(network_info_df['name'])
 
@@ -2663,13 +2663,13 @@ def main():
     
     vessel_network.generate_vessel_array()
 
-    vessel_array_csv_filepath = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/image_to_model_vessel_array.csv'
+    vessel_array_csv_filepath = '/home/dsas627/PycharmProjects/circulatory_autogen/resources/image_to_model_vessel_array.csv'
     vessel_network.vessel_df.to_csv(vessel_array_csv_filepath, index=False)
 
     vessel_network.generate_parameter_array()
     vessel_network.populate_parameter_array()
 
-    parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/image_to_model_parameters.csv'
+    parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/circulatory_autogen/resources/image_to_model_parameters.csv'
     vessel_network.parameter_df.to_csv(parameters_csv_abs_path_temp, index=False, header=True)
 
     #####################################
@@ -2678,7 +2678,7 @@ def main():
 
     if run_circ_autogen:
 
-        script_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/src/scripts/script_generate_with_new_architecture.py"
+        script_path = "/home/dsas627/PycharmProjects/circulatory_autogen/src/scripts/script_generate_with_new_architecture.py"
         script_dir = os.path.dirname(script_path)
 
         print("Starting script...")
