@@ -288,7 +288,8 @@ class CVS0DParamID():
         self.param_id.set_param_id_method(param_id_method)
 
     def set_ground_truth_data(self, obs_data_dict):
-        print(f'Setting ground truth data: {obs_data_dict}')
+        if self.rank == 0:
+            print(f'Setting ground truth data: {obs_data_dict}')
         parsed_data = self.obs_and_param_parser.parse_obs_data_json(
             obs_data_dict=obs_data_dict,
             pre_time=self.pre_time,
@@ -307,14 +308,17 @@ class CVS0DParamID():
         self.param_id.set_obs_info(self.obs_info)
         self.param_id.set_protocol_info(self.protocol_info)
         self.param_id.set_prediction_info(self.prediction_info)
-        print(f'Ground truth data set: {self.obs_info}')
+        if self.rank == 0:
+            print(f'Ground truth data set: {self.obs_info}')
     
     def set_params_for_id(self, params_for_id_dict):
-        print(f'Setting params for id: {params_for_id_dict}')
+        if self.rank == 0:
+            print(f'Setting params for id: {params_for_id_dict}')
         self.param_id_info = self.obs_and_param_parser.get_param_id_info_from_entries(params_for_id_dict)
         self.obs_and_param_parser.save_param_names(self.param_id_info, self.output_dir)
         self.param_id.set_param_id_info(self.param_id_info)
-        print(f'Params for id set: {self.param_id_info["param_names"]}')
+        if self.rank == 0:
+            print(f'Params for id set: {self.param_id_info["param_names"]}')
 
     def set_best_param_vals(self, best_param_vals):
         if self.mcmc_instead:
