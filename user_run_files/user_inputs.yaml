@@ -1,14 +1,13 @@
 #_______ general inputs ________
 DEBUG: false # TODO change back
 # user_inputs_path_override: false
-user_inputs_path_override: 
-  /home/farg967/Documents/git_projects/CA_user_FA_MG/control_parasymp/user_inputs_control_parasymp.yaml
-file_prefix: undefined
+user_inputs_path_override: /home/farg967/Documents/git_projects/CA_user_FA_MG/control_parasymp/user_inputs_control_parasymp.yaml
+file_prefix: 3compartment
 
 # input_param_file must be stored in resources. If first creating a parameters file 
 # set this to parameters_orig.csv and a 
 # parameters file will be generated with spaces for the required parameters
-input_param_file: undefined_parameters.csv
+input_param_file: 3compartment_parameters.csv
 
 # cpp generation inputs
 # model_type can be cellml_only, cpp, or python atm 
@@ -35,8 +34,7 @@ sim_time: 2
 resources_dir: /home/farg967/Documents/temp/test_for_phlynx_cvs/resources
 # generated_models_dir: /home/farg967/Documents/git_projects/CA_user/3compartment/generated_models
 # param_id_output_dir: /home/farg967/Documents/git_projects/CA_user/3compartment/param_id_output
-external_modules_dir: 
-  /home/farg967/Documents/temp/test_for_phlynx_cvs/module_config
+# external_modules_dir: /home/farg967/Documents/temp/test_for_phlynx_cvs/module_config
 
 
 # This is for cpp generation
