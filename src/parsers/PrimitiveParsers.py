@@ -466,16 +466,17 @@ class YamlFileParser(object):
                         inp_data_dict['optimiser_options'][key] = value
         
         # Handle debug_optimiser_options (new preferred way)
-        # If provided, merge them into optimiser_options and allow overrides
-        if 'debug_optimiser_options' in inp_data_dict.keys() and inp_data_dict['debug_optimiser_options'] is not None:
-            debug_opts = inp_data_dict['debug_optimiser_options']
-            if isinstance(debug_opts, dict):
-                for key, value in debug_opts.items():
-                    if key in inp_data_dict['optimiser_options']:
-                        if inp_data_dict['optimiser_options'][key] != value:
-                            print(f'Note: debug_optimiser_options["{key}"] overriding optimiser_options["{key}"] '
-                                  f'({inp_data_dict["optimiser_options"][key]} -> {value})')
-                    inp_data_dict['optimiser_options'][key] = value
+        # Only apply when DEBUG is True to avoid overriding production runs
+        if inp_data_dict['DEBUG']:
+            if 'debug_optimiser_options' in inp_data_dict.keys() and inp_data_dict['debug_optimiser_options'] is not None:
+                debug_opts = inp_data_dict['debug_optimiser_options']
+                if isinstance(debug_opts, dict):
+                    for key, value in debug_opts.items():
+                        if key in inp_data_dict['optimiser_options']:
+                            if inp_data_dict['optimiser_options'][key] != value:
+                                print(f'Note: debug_optimiser_options["{key}"] overriding optimiser_options["{key}"] '
+                                      f'({inp_data_dict["optimiser_options"][key]} -> {value})')
+                        inp_data_dict['optimiser_options'][key] = value
 
         # for generation only
     
