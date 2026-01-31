@@ -646,10 +646,29 @@
         <variable name="P_pl" public_interface="out" units="J_per_m3"/>
         <!-- resp muscle pressure-->
         <variable name="P_mus" public_interface="out" units="J_per_m3"/>
-        <variable name="P_mus_min" public_interface="in" units="J_per_m3"/>
-        <variable name="P_mus_min_wCont" public_interface="out" units="J_per_m3"/>
-        <variable name="P_plEE" public_interface="in" units="J_per_m3"/>
-        <variable name="Delta_P_mus" public_interface="in" units="J_per_m3"/>
+        <!-- var P_mus_min: J_per_m3 {pub: in};
+ var P_mus_min_wCont: J_per_m3 {pub: out};-->
+        <variable name="alpha_P_mus" public_interface="in" units="dimensionless"/>
+        <variable name="alpha_P_mus_applied" public_interface="out" units="dimensionless"/>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+                <eq/>
+                <ci>alpha_P_mus_applied</ci>
+                <piecewise>
+                    <piece>
+                        <ci>alpha_P_mus</ci>
+                        <apply>
+                            <eq/>
+                            <ci>flag_P_mus_control</ci>
+                            <cn cellml:units="dimensionless">1</cn>
+                        </apply>
+                    </piece>
+                    <otherwise>
+                        <cn cellml:units="dimensionless">1.0</cn>
+                    </otherwise>
+                </piecewise>
+            </apply>
+        </math>
         <!-- ______  volumes_________   -->
         <!-- volume of tube/mask-->
         <variable initial_value="1.0e-3" name="q_t" public_interface="out" units="m3"/>
@@ -1029,37 +1048,6 @@
                     <ci>P_pl</ci>
                 </apply>
             </apply>
-            <!-- removing pleural pressure from bronchioles
- allows us to use q_b for a volume for stretch. This makes it varies about zero, 
- meaning we don't need a threshold, or the threshold can be zero.
- However, it's not physiological, so I am trying to fix it here.
- calculate the amount of stretched volume above baseline level.
- assuming a quater of the way from end expiratory pressure to min is baseline.-->
-            <apply>
-                <eq/>
-                <ci>q_str</ci>
-                <apply>
-                    <plus/>
-                    <ci>q_b</ci>
-                    <apply>
-                        <times/>
-                        <ci>C_b</ci>
-                        <apply>
-                            <plus/>
-                            <ci>P_plEE</ci>
-                            <apply>
-                                <divide/>
-                                <apply>
-                                    <minus/>
-                                    <ci>P_mus_min</ci>
-                                    <ci>P_plEE</ci>
-                                </apply>
-                                <cn cellml:units="dimensionless">4</cn>
-                            </apply>
-                        </apply>
-                    </apply>
-                </apply>
-            </apply>
             <!-- TODO change lung diagram.-->
             <apply>
                 <eq/>
@@ -1222,49 +1210,11 @@
                     <ci>T_resp</ci>
                 </apply>
             </apply>
-            <apply>
-                <eq/>
-                <ci>P_mus_min_wCont</ci>
-                <apply>
-                    <plus/>
-                    <ci>P_mus_min</ci>
-                    <apply>
-                        <times/>
-                        <ci>flag_P_mus_control</ci>
-                        <ci>Delta_P_mus</ci>
-                    </apply>
-                </apply>
-            </apply>
         </math>
-        <!-- This is the controlled end expiratiory pressure-->
-        <variable name="P_mus_max_wCont" public_interface="out" units="J_per_m3"/>
-        <!-- the unit of the 0 should be J_per_m3 instead of dimensionless-->
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-            <apply>
-                <eq/>
-                <ci>P_mus_max_wCont</ci>
-                <apply>
-                    <plus/>
-                    <ci>P_plEE</ci>
-                    <apply>
-                        <max/>
-                        <apply>
-                            <times/>
-                            <apply>
-                                <minus/>
-                                <ci>flag_P_mus_control</ci>
-                            </apply>
-                            <ci>Delta_P_mus</ci>
-                        </apply>
-                        <cn cellml:units="J_per_m3">0</cn>
-                    </apply>
-                </apply>
-            </apply>
-        </math>
-        <!-- TODO apply the P_mus_max_wCont to the 
- Figure out whether the negative P_plEE and the positive PEEP are the same things.-->
+        <!-- TODO create a max pressure to be controlled. We can calibrate this with FL COPD patients.-->
         <!-- TODO turn the below b-spline calculation into a separate module-->
         <variable name="P_d" public_interface="out" units="J_per_m3"/>
+        <variable name="P_d_multiplier" public_interface="in" units="dimensionless"/>
         <!-- TODO also need to scale k_w in lung control-->
         <variable name="k_w" public_interface="in" units="second"/>
         <!-- coeffs-->
@@ -2451,11 +2401,13 @@
                 <eq/>
                 <ci>P_mus</ci>
                 <apply>
-                    <plus/>
+                    <times/>
                     <ci>P_d</ci>
-                    <ci>P_mus_max_wCont</ci>
+                    <ci>P_d_multiplier</ci>
+                    <ci>alpha_P_mus_applied</ci>
                 </apply>
             </apply>
+            <!--+P_mus_max_wCont;-->
             <!-- TODO expiratory pressure.
 otherwise:
    P_mus_max_wCont+(P_mus_min_wCont-P_mus_max_wCont)/(1{dimensionless}-exp(-T_E/tau))*(exp(-(t_floor-T_I)/tau)-exp(-T_E/tau));
@@ -2467,8 +2419,22 @@ endsel;-->
                 <ci>alpha_LR</ci>
                 <cn cellml:units="dimensionless">1.0</cn>
             </apply>
+            <!-- 1.0e-4{m3}/(abs(q_b)+1e-12{m3});-->
+            <!-- this could be the square of volume, to explore.-->
+            <!-- previously we used q_str below
+ removing pleural pressure from bronchioles
+ allows us to use q_b for a volume for stretch. This makes it varies about zero, 
+ meaning we don't need a threshold, or the threshold can be zero.
+ However, it's not physiological, so I am trying to fix it here.
+ calculate the amount of stretched volume above baseline level.
+ assuming a quater of the way from end expiratory pressure to min is baseline.-->
+            <apply>
+                <eq/>
+                <ci>q_str</ci>
+                <cn cellml:units="m3">1.0</cn>
+            </apply>
         </math>
-        <!-- 1.0e-4{m3}/(abs(q_b)+1e-12{m3});-->
-        <!-- this could be the square of volume, to explore.-->
+        <!-- q_b+C_b*(P_plEE+(P_mus_min-P_plEE)/4{dimensionless});
+ TODO fix this-->
     </component>
 </model>

@@ -17,7 +17,7 @@
           },
           {    
             "port_type":"respiratory_lung_muscle_pressure_port",
-            "variables":["Delta_P_mus"]
+            "variables":["alpha_P_mus"]
           }
         ],
         "exit_ports":
@@ -47,7 +47,7 @@
           ["P_mus", "J_per_m3", "access", "variable"],
           ["flag_P_mus_control", "dimensionless", "access", "constant"],
           ["flag_RR_control", "dimensionless", "access", "constant"],
-          ["Delta_P_mus", "J_per_m3", "access", "boundary_condition"],
+          ["alpha_P_mus", "J_per_m3", "access", "boundary_condition"],
           ["P_mus_min_wCont", "J_per_m3", "access", "variable"],
           ["P_mus_min", "J_per_m3", "access", "constant"],
           ["P_mus_max_wCont", "J_per_m3", "access", "variable"],
@@ -56,6 +56,7 @@
           ["q_t", "m3", "access", "variable"],
           ["q_b", "m3", "access", "variable"],
           ["q_A", "m3", "access", "variable"],
+          ["q_A_stressed", "m3", "access", "variable"],
           ["q_pl", "m3", "access", "variable"],
           ["q_D", "m3", "access", "variable"],
           ["q_D_min", "m3", "access", "constant"],
@@ -112,7 +113,7 @@
           },
           {    
             "port_type":"respiratory_lung_muscle_pressure_port",
-            "variables":["Delta_P_mus"]
+            "variables":["alpha_P_mus"]
           }
         ],
         "exit_ports":
@@ -144,12 +145,10 @@
           ["P_mus", "J_per_m3", "access", "variable"],
           ["flag_P_mus_control", "dimensionless", "access", "constant"],
           ["flag_RR_control", "dimensionless", "access", "constant"],
-          ["Delta_P_mus", "J_per_m3", "access", "boundary_condition"],
-          ["P_mus_min_wCont", "J_per_m3", "access", "variable"],
-          ["P_mus_min", "J_per_m3", "access", "constant"],
-          ["P_mus_max_wCont", "J_per_m3", "access", "variable"],
-          ["P_plEE", "J_per_m3", "access", "constant"],
+          ["alpha_P_mus", "dimensionless", "access", "boundary_condition"],
+          ["alpha_P_mus_applied", "dimensionless", "access", "variable"],
           ["P_d", "J_per_m3", "access", "variable"],
+          ["P_d_multiplier", "dimensionless", "access", "constant"],
           ["P_d_1", "J_per_m3", "access", "constant"],
           ["P_d_2", "J_per_m3", "access", "constant"],
           ["P_d_3", "J_per_m3", "access", "constant"],
