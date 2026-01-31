@@ -2027,9 +2027,9 @@
         <variable initial_value="0.0" name="Delta_RR_c" public_interface="out" units="Hz"/>
         <variable initial_value="0.0" name="Delta_RR_p" public_interface="out" units="Hz"/>
         <variable name="Delta_RR_resp" public_interface="out" units="per_s"/>
-        <variable initial_value="0.0" name="alpha_P_mus_c" public_interface="out" units="J_per_m3"/>
-        <variable initial_value="0.0" name="alpha_P_mus_p" public_interface="out" units="J_per_m3"/>
-        <variable name="alpha_P_mus" public_interface="out" units="J_per_m3"/>
+        <variable initial_value="0.0" name="alpha_P_mus_c" public_interface="out" units="dimensionless"/>
+        <variable initial_value="0.0" name="alpha_P_mus_p" public_interface="out" units="dimensionless"/>
+        <variable name="alpha_P_mus" public_interface="out" units="dimensionless"/>
         <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
                 <eq/>
@@ -2137,9 +2137,9 @@
             </apply>
         </math>
         <variable name="Delta_RR_resp_max" public_interface="in" units="per_s"/>
-        <variable name="alpha_P_mus_max" public_interface="in" units="J_per_m3"/>
+        <variable name="alpha_P_mus_max" public_interface="in" units="dimensionless"/>
         <variable name="Delta_RR_resp_min" public_interface="in" units="per_s"/>
-        <variable name="alpha_P_mus_min" public_interface="in" units="J_per_m3"/>
+        <variable name="alpha_P_mus_min" public_interface="in" units="dimensionless"/>
         <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
                 <eq/>
