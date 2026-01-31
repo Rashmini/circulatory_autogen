@@ -12,6 +12,10 @@ import csv
 import json
 import copy
 import yaml
+try:
+    from ruamel.yaml.scalarfloat import ScalarFloat
+except Exception:
+    ScalarFloat = None
 import re
 try: 
     from mpi4py import MPI
@@ -203,6 +207,8 @@ class YamlFileParser(object):
         if 'dt' not in inp_data_dict.keys():
             inp_data_dict['dt'] = 0.01
         else:
+            if ScalarFloat is not None and isinstance(inp_data_dict['dt'], ScalarFloat):
+                inp_data_dict['dt'] = float(inp_data_dict['dt'])
             if type(inp_data_dict['dt']) != float:
                 print(f'dt must be a float, but is {type(inp_data_dict["dt"])}')
                 exit()

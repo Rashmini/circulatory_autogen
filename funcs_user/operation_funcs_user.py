@@ -1,7 +1,10 @@
 import numpy as np
 import os
 import sys
-import sympy
+try:
+    import sympy
+except ImportError:  # optional dependency
+    sympy = None
 from scipy.signal import find_peaks
 
 # decorator for functions that turn a series into a constant
@@ -451,6 +454,20 @@ def max_minus_min_divided_by_mean_in_range(x, start_frac=0.0, end_frac=1.0, seri
         return x
     else:
         return max_minus_min_divided_by_mean
+
+@series_to_constant
+def max_minus_min_over_mean_in_range(x, start_frac=0.0, end_frac=1.0, series_output=False):
+    return max_minus_min_divided_by_mean_in_range(
+        x,
+        start_frac=start_frac,
+        end_frac=end_frac,
+        series_output=series_output,
+    )
+
+def first_minus_second_over_third_in_range(first, second, third):
+    if np.isscalar(first) and np.isscalar(second) and np.isscalar(third):
+        return (first - second) / third
+    return (np.asarray(first) - np.asarray(second)) / np.asarray(third)
 
 @series_to_constant
 def max_minus_min_in_range(x, start_frac=0.0, end_frac=1.0, series_output=False):

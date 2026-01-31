@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
-import yaml
+try:
+    import yaml
+except ImportError:  # optional dependency
+    yaml = None
 import json
 import os, sys
 import re
@@ -129,6 +132,8 @@ class ObsDataCreator:
         for key in entry.keys():
             if isinstance(entry[key], np.ndarray):
                 entry[key] = entry[key].tolist()
+            elif isinstance(entry[key], np.generic):
+                entry[key] = entry[key].item()
 
         self.obs_data_dict['data_items'].append(entry)
     
@@ -143,7 +148,10 @@ class ObsDataCreator:
         Dumps the observation data dictionary to a JSON file.
         """
         with open(output_path, 'w') as f:
-            json.dump(self.obs_data_dict, f, indent=2)
+            obs_data_dict = dict(self.obs_data_dict)
+            if not obs_data_dict.get('prediction_items'):
+                obs_data_dict.pop('prediction_items', None)
+            json.dump(obs_data_dict, f, indent=2)
         print(f"Observation data dumped to {output_path}")
     
     def load_from_json_file(self, input_path):
