@@ -802,7 +802,7 @@ class ObsAndParamDataParser(object):
                     prediction_info['names_for_plotting'].append(entry.get('name_for_plotting', entry['variable']))
                     prediction_info['experiment_idxs'].append(entry.get('experiment_idx', 0))
             else:
-                prediction_info = None
+                prediction_info = {'names': [], 'units': [], 'names_for_plotting': [], 'experiment_idxs': []}
             
         else:
             print(f"Error: unknown data type for imported json object of {type(json_obj)}")
