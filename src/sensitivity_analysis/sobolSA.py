@@ -257,7 +257,10 @@ class sobol_SA():
     def run_model_and_get_results(self, param_vals):
         self.sim_helper.set_param_vals(self.SA_info["param_names"], param_vals)
         self.sim_helper.reset_states()
-        self.sim_helper.run()
+        success = self.sim_helper.run()
+        if not success:
+            print(f"[MPI Rank {self.rank}] Failed to converge for params: {param_vals}")
+            return None
 
         operands = self.sim_helper.get_results(self.obs_info["operands"])
 
