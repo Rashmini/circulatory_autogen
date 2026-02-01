@@ -519,6 +519,26 @@ def mean_in_range_fraction_change_from_initial(x, start_frac=0.8, end_frac=1.0, 
     else:
         return percentage_change
 
+@series_to_constant
+def mean_in_range_fraction_change_from_initial_range(x, start_frac=0.8, end_frac=1.0, series_output=False, init_range_end_frac=0.1):
+    # calculate the mean in a range (normally at the end converged stated) minus the initial value in 
+    # the subexperiment and get the percentage change.
+    # for example:
+       
+    start_idx = int(start_frac*(len(x)-1))
+    end_idx = int(end_frac*(len(x)-1))
+    end_init_idx = int(init_range_end_frac*(len(x)-1))
+    range_values_mean = np.mean(x[start_idx:end_idx])
+    init_range_mean = np.mean(x[:end_init_idx])
+    mean_minus_init = range_values_mean - init_range_mean
+    percentage_change = mean_minus_init / init_range_mean  # percentage change from initial value
+
+    if series_output:
+        # TODO for plotting should I output the percentage change or the mean minus initial?
+        return x
+    else:
+        return percentage_change
+
 
 @series_to_constant
 def min_in_range(x, start_frac=0.0, end_frac=1.0, series_output=False):
