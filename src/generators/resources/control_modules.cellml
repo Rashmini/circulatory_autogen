@@ -2098,6 +2098,7 @@
                         <plus/>
                         <apply>
                             <minus/>
+                            <cn cellml:units="dimensionless">1</cn>
                             <ci>alpha_P_mus_c</ci>
                         </apply>
                         <apply>
@@ -2124,6 +2125,7 @@
                         <plus/>
                         <apply>
                             <minus/>
+                            <cn cellml:units="dimensionless">1</cn>
                             <ci>alpha_P_mus_p</ci>
                         </apply>
                         <apply>
