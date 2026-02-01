@@ -220,6 +220,13 @@ class CVS0DParamID():
 
         return cls(**kwargs)
 
+    @classmethod
+    def init_from_all_dicts(cls, inp_data_dict, obs_data_dict, params_for_id_dict):
+        new_object = cls.init_from_dict(inp_data_dict)
+        new_object.set_ground_truth_data(obs_data_dict)
+        new_object.set_params_for_id(params_for_id_dict)
+        return new_object
+
     def temp_test(self):
         self.param_id.temp_test()
     def temp_test2(self):

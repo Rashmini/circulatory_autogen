@@ -92,6 +92,13 @@ class SensitivityAnalysis():
 
         return cls(**kwargs)
 
+    def init_from_all_dicts(cls, inp_data_dict, obs_data_dict, params_for_id_dict, sa_options):
+        sa = cls.init_from_dict(inp_data_dict)
+        sa.set_ground_truth_data(obs_data_dict)
+        sa.set_params_for_id(params_for_id_dict)
+        sa.set_sa_options(sa_options)
+        return sa
+
     def add_user_operation_func(self, func):
         self.SA_manager.add_user_operation_func(func)
 
