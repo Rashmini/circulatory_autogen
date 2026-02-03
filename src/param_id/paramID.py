@@ -729,6 +729,9 @@ class CVS0DParamID():
         else:
             num_plots = len(obs_names_for_plot)// 10 + 1
 
+        y_min_percent = 1.05 * np.min(percent_error_vec)
+        y_max_percent = 1.05 * np.max(percent_error_vec)
+
         for plot_idx in range(num_plots):
             fig, axs = plt.subplots()
 
@@ -752,6 +755,7 @@ class CVS0DParamID():
 
             # axs.set_ylim(ymin=0.0)
             # axs.set_yticks(np.arange(0, 21, 10))
+            axs.set_ylim(y_min_percent, y_max_percent)
             axs.axhline(y=0.0,linewidth= 3, color='k', linestyle= 'dotted')
 
             # bar_list[0].set_facecolor('r')
