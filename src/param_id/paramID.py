@@ -723,14 +723,32 @@ class CVS0DParamID():
             obs_names_for_plot_list.append(name_str)
         obs_names_for_plot = np.array(obs_names_for_plot_list)
 
-        num_plots = len(obs_names_for_plot)// 10 + 1
+        do_plots_per_exp = True
+        if do_plots_per_exp:
+            num_plots = len(self.protocol_info["pre_times"])
+        else:
+            num_plots = len(obs_names_for_plot)// 10 + 1
 
         for plot_idx in range(num_plots):
             fig, axs = plt.subplots()
-            if plot_idx == num_plots - 1:
-                bar_list = axs.bar(obs_names_for_plot[plot_idx*10:], percent_error_vec[plot_idx*10:], label='% error', width=1.0, color='b', edgecolor='black')
+
+            if do_plots_per_exp:
+                obs_idx_for_plot = [
+                    II for II in range(self.obs_info["num_obs"])
+                    if self.obs_info["experiment_idxs"][II] == plot_idx
+                ]
+                if len(obs_idx_for_plot) == 0:
+                    plt.close(fig)
+                    continue
             else:
-                bar_list = axs.bar(obs_names_for_plot[plot_idx*10:plot_idx*10+10], percent_error_vec[plot_idx*10:plot_idx*10+10], label='% error', width=1.0, color='b', edgecolor='black')
+                start_idx = plot_idx * 10
+                end_idx = min(start_idx + 10, len(obs_names_for_plot))
+                obs_idx_for_plot = list(range(start_idx, end_idx))
+
+            bar_list = axs.bar(obs_names_for_plot[obs_idx_for_plot],
+                               percent_error_vec[obs_idx_for_plot],
+                               label='% error', width=1.0, color='b',
+                               edgecolor='black')
 
             # axs.set_ylim(ymin=0.0)
             # axs.set_yticks(np.arange(0, 21, 10))
@@ -756,10 +774,19 @@ class CVS0DParamID():
 
             #plot error as number of standard deviations of
             fig, axs = plt.subplots()
-            if plot_idx == num_plots - 1:
-                bar_list = axs.bar(obs_names_for_plot[plot_idx*10:], std_error_vec[plot_idx*10:], label='% error', width=1.0, color='b', edgecolor='black')
+            if do_plots_per_exp:
+                if len(obs_idx_for_plot) == 0:
+                    plt.close(fig)
+                    continue
+                bar_list = axs.bar(obs_names_for_plot[obs_idx_for_plot],
+                                   std_error_vec[obs_idx_for_plot],
+                                   label='% error', width=1.0, color='b',
+                                   edgecolor='black')
             else:
-                bar_list = axs.bar(obs_names_for_plot[plot_idx*10:plot_idx*10+10], std_error_vec[plot_idx*10:plot_idx*10+10], label='% error', width=1.0, color='b', edgecolor='black')
+                if plot_idx == num_plots - 1:
+                    bar_list = axs.bar(obs_names_for_plot[plot_idx*10:], std_error_vec[plot_idx*10:], label='% error', width=1.0, color='b', edgecolor='black')
+                else:
+                    bar_list = axs.bar(obs_names_for_plot[plot_idx*10:plot_idx*10+10], std_error_vec[plot_idx*10:plot_idx*10+10], label='% error', width=1.0, color='b', edgecolor='black')
             axs.axhline(y=0.0,linewidth=3, color='k', linestyle= 'dotted')
 
             
