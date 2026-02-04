@@ -1395,24 +1395,30 @@ def _order_voxel_path(path_voxels_zyx, start_node_pos_zyx):
 ### // Main (Function) // ###
 #############################
 
-def run_image_to_model(image_path, output_dir, sub_volume):
+def run_image_to_model(target_image_path, ilastik_path, model_path, input_batch_processing_path, output_batch_processing_path, output_dir, sub_volume, run_ilastik_batch_processing):
 
     ############################
     ### // Ilastik Config // ###
     ############################
 
-    run_ilastik_batch_processing = False
+    run_ilastik_batch_processing = run_ilastik_batch_processing
 
-    ilastik_path = "/home/dsas627/Desktop/ilastik-1.4.1rc2-gpu-Linux/run_ilastik.sh"
-    model_path = "/home/dsas627/Desktop/Ilastik Image Segmentations/C2-Zstack1_Animal2_NG2_dsRed_CD31_647_GLUT_15042025_vessels_processed.ilp"
-    raw_images_folder = "/home/dsas627/Desktop/UCL_confocal/batch_process_input_folder/"
-    output_folder = "/home/dsas627/Desktop/UCL_confocal/batch_process_output_folder/"
+    # ilastik_path = "/home/dsas627/Desktop/ilastik-1.4.1rc2-gpu-Linux/run_ilastik.sh"
+    # model_path = "/home/dsas627/Desktop/Ilastik Image Segmentations/C2-Zstack1_Animal2_NG2_dsRed_CD31_647_GLUT_15042025_vessels_processed.ilp"
+    # input_batch_processing_path = "/home/dsas627/Desktop/UCL_confocal/batch_process_input_folder/"
+    # output_batch_processing_path = "/home/dsas627/Desktop/UCL_confocal/batch_process_output_folder/"
+
+    ilastik_path = ilastik_path
+    model_path = model_path
+    input_batch_processing_path = input_batch_processing_path
+    output_batch_processing_path = output_batch_processing_path
+
 
     #############################
     ### // Image(s) Config // ###
     #############################
 
-    input_file_path = image_path
+    input_file_path = target_image_path
     # input_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1)_skeletal_muscle_pc_no_raw_data.h5"
     labels_to_render_str = "2"
     hdf5_dataset_name_if_applicable = "exported_data"
@@ -1523,8 +1529,8 @@ def run_image_to_model(image_path, output_dir, sub_volume):
 
         classifier = IlastikClassifier(ilastik_path, model_path)
 
-        classifier.segment_images(input_dir=raw_images_folder,
-                                output_dir=output_folder,
+        classifier.segment_images(input_dir=input_batch_processing_path,
+                                output_dir=output_batch_processing_path,
                                 input_ext="*.tif")
 
     ####################################################
@@ -1535,7 +1541,7 @@ def run_image_to_model(image_path, output_dir, sub_volume):
 
     ### // v DEBUG: Load from batch processing output folder v // ###
 
-    # output_folder_path = Path(output_folder)
+    # output_folder_path = Path(output_batch_processing_path)
     # segmentation_files = [str (p) for p in output_folder_path.glob('*.h5')]
 
     # segmentation_data = load_segmentation_data(segmentation_files[1], hdf5_dataset_name_if_applicable)
