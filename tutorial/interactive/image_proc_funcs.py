@@ -907,7 +907,7 @@ class VesselNetwork():
             #         return radius, length, stiffness, volume
             #     return np.nan, np.nan, np.nan, np.nan
 
-            CB_geom_params_df = pd.read_csv('/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/label_1_edge_list_for_matrix.csv')
+            CB_geom_params_df = pd.read_csv('label_2_edge_list_for_matrix.csv')
             CB_geom_params_dict = CB_geom_params_df.set_index('Edge_ID_in_Matrix')[['EstimatedRadius', 'WorldLength']].to_dict('index')
             
             def get_vessel_info_row(row, vessel_props_dict, ref_data_dict):
@@ -1181,7 +1181,7 @@ def load_segmentation_data(filepath, hdf5_dataset_name=None):
     if not os.path.exists(filepath):
         print(f"Error: File not found at {filepath}")
         return None
-    _, extension = os.path.splitext(filepath.lower())
+    _, extension = os.path.splitext(str(filepath).lower())
     try:
         if extension in ['.h5', '.hdf5']:
             if not hdf5_dataset_name:
@@ -1507,7 +1507,7 @@ def run_image_to_model(target_image_path, ilastik_path, model_path, input_batch_
     generate_tissue_block_face_file = True
     output_tissue_block_face_filename = "tissue_block_faces.csv"
     # --- NEW: Vessels by Tissue Block Calculation ---
-    generate_vessels_by_block_file = True
+    generate_vessels_by_block_file = False
     output_vessels_by_block_filename = "vessels_by_block.csv"
     # --- NEW: Vessel and Volume Element Array ---
     generate_vessel_and_volume_array_file = True
@@ -2646,10 +2646,10 @@ def run_image_to_model(target_image_path, ilastik_path, model_path, input_batch_
     ### // Vessel Network Construction // ###
     #########################################
 
-    C_vessel_filepath = output_dir / 'label_1_edge_adjacency_matrix.csv'
+    C_vessel_filepath = output_dir / f'label_{label_id}_edge_adjacency_matrix.csv'
     C_vessel = np.genfromtxt(C_vessel_filepath, delimiter=',')
 
-    network_info_filepath = output_dir / 'image_to_model_vessel_xyz.csv'
+    network_info_filepath = output_dir / f'label_{label_id}_image_to_model_vessel_xyz.csv'
     network_info_df = pd.read_csv(network_info_filepath, engine='python')
     vessel_names = np.array(network_info_df['name'])
 
