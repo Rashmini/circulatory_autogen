@@ -12,6 +12,10 @@ import csv
 import json
 import copy
 import yaml
+try:
+    from ruamel.yaml.scalarfloat import ScalarFloat
+except Exception:
+    ScalarFloat = None
 import re
 try: 
     from mpi4py import MPI
@@ -125,6 +129,9 @@ class YamlFileParser(object):
 
         if 'couple_to_1d' not in inp_data_dict.keys():
             inp_data_dict['couple_to_1d'] = False
+        
+        if 'param_id_method' not in inp_data_dict.keys():
+            inp_data_dict['param_id_method'] = 'genetic_algorithm'
 
         # overwrite dir paths if set in user_inputs.yaml
         if "resources_dir" in inp_data_dict.keys():
@@ -200,6 +207,8 @@ class YamlFileParser(object):
         if 'dt' not in inp_data_dict.keys():
             inp_data_dict['dt'] = 0.01
         else:
+            if ScalarFloat is not None and isinstance(inp_data_dict['dt'], ScalarFloat):
+                inp_data_dict['dt'] = float(inp_data_dict['dt'])
             if type(inp_data_dict['dt']) != float:
                 print(f'dt must be a float, but is {type(inp_data_dict["dt"])}')
                 exit()
@@ -207,10 +216,12 @@ class YamlFileParser(object):
         if 'pre_time' in inp_data_dict.keys():
             inp_data_dict['pre_time'] = inp_data_dict['pre_time']
         else:
-            inp_data_dict['pre_time'] = None
+            inp_data_dict['pre_time'] = 0.0
+
         if 'sim_time' in inp_data_dict.keys():
             inp_data_dict['sim_time'] = inp_data_dict['sim_time']
         else:
+            print(f'sim_time not found in inp_data_dict, setting to None so it can be set in protocol_info')
             inp_data_dict['sim_time'] = None
 
         # Parse and validate the solver parameter
@@ -455,16 +466,17 @@ class YamlFileParser(object):
                         inp_data_dict['optimiser_options'][key] = value
         
         # Handle debug_optimiser_options (new preferred way)
-        # If provided, merge them into optimiser_options and allow overrides
-        if 'debug_optimiser_options' in inp_data_dict.keys() and inp_data_dict['debug_optimiser_options'] is not None:
-            debug_opts = inp_data_dict['debug_optimiser_options']
-            if isinstance(debug_opts, dict):
-                for key, value in debug_opts.items():
-                    if key in inp_data_dict['optimiser_options']:
-                        if inp_data_dict['optimiser_options'][key] != value:
-                            print(f'Note: debug_optimiser_options["{key}"] overriding optimiser_options["{key}"] '
-                                  f'({inp_data_dict["optimiser_options"][key]} -> {value})')
-                    inp_data_dict['optimiser_options'][key] = value
+        # Only apply when DEBUG is True to avoid overriding production runs
+        if inp_data_dict['DEBUG']:
+            if 'debug_optimiser_options' in inp_data_dict.keys() and inp_data_dict['debug_optimiser_options'] is not None:
+                debug_opts = inp_data_dict['debug_optimiser_options']
+                if isinstance(debug_opts, dict):
+                    for key, value in debug_opts.items():
+                        if key in inp_data_dict['optimiser_options']:
+                            if inp_data_dict['optimiser_options'][key] != value:
+                                print(f'Note: debug_optimiser_options["{key}"] overriding optimiser_options["{key}"] '
+                                      f'({inp_data_dict["optimiser_options"][key]} -> {value})')
+                        inp_data_dict['optimiser_options'][key] = value
 
         # for generation only
     
@@ -751,7 +763,7 @@ class ObsAndParamDataParser(object):
             gt_df = pd.DataFrame(json_obj)
             protocol_info = {"pre_times": [pre_time], 
                              "sim_times": [[sim_time]],
-                             "params_to_change": [[None]]}
+                             "params_to_change": {}}
             prediction_info = {'names': [], 'units': [], 'names_for_plotting': [], 'experiment_idxs': []}
             
 
@@ -777,7 +789,7 @@ class ObsAndParamDataParser(object):
                           "If this is the case sim_time and pre_time must be set",
                           "in the user_inputs.yaml file")
                     exit()
-                protocol_info = {"pre_times": [pre_time], "sim_times": [[sim_time]], "params_to_change": [[None]]}
+                protocol_info = {"pre_times": [pre_time], "sim_times": [[sim_time]], "params_to_change": {}}
 
             # Load Prediction Info
             if 'prediction_items' in json_obj.keys():
@@ -791,7 +803,7 @@ class ObsAndParamDataParser(object):
                     prediction_info['names_for_plotting'].append(entry.get('name_for_plotting', entry['variable']))
                     prediction_info['experiment_idxs'].append(entry.get('experiment_idx', 0))
             else:
-                prediction_info = None
+                prediction_info = {'names': [], 'units': [], 'names_for_plotting': [], 'experiment_idxs': []}
             
         else:
             print(f"Error: unknown data type for imported json object of {type(json_obj)}")

@@ -1,7 +1,10 @@
 import numpy as np
 import os
 import sys
-import sympy
+try:
+    import sympy
+except ImportError:  # optional dependency
+    sympy = None
 from scipy.signal import find_peaks
 
 # decorator for functions that turn a series into a constant
@@ -436,6 +439,37 @@ def mean_peak_to_trough_time(t, V, series_output=False, spike_min_thresh=None, d
     return t_diff
 
 @series_to_constant
+def max_minus_min_divided_by_mean_in_range(x, start_frac=0.0, end_frac=1.0, series_output=False):
+    # calculate the max minus min for the first max and min in a range.
+    # for example: tidal volume = max(x) - min(x)
+       
+    start_idx = int(start_frac*(len(x)-1))
+    end_idx = int(end_frac*(len(x)-1))
+    range_values_max = np.max(x[start_idx:end_idx])
+    range_values_min = np.min(x[start_idx:end_idx])
+    range_values_mean = np.mean(x[start_idx:end_idx])
+    max_minus_min_divided_by_mean = (range_values_max - range_values_min)/range_values_mean
+
+    if series_output:
+        return x
+    else:
+        return max_minus_min_divided_by_mean
+
+@series_to_constant
+def max_minus_min_over_mean_in_range(x, start_frac=0.0, end_frac=1.0, series_output=False):
+    return max_minus_min_divided_by_mean_in_range(
+        x,
+        start_frac=start_frac,
+        end_frac=end_frac,
+        series_output=series_output,
+    )
+
+def first_minus_second_over_third_in_range(first, second, third):
+    if np.isscalar(first) and np.isscalar(second) and np.isscalar(third):
+        return (first - second) / third
+    return (np.asarray(first) - np.asarray(second)) / np.asarray(third)
+
+@series_to_constant
 def max_minus_min_in_range(x, start_frac=0.0, end_frac=1.0, series_output=False):
     # calculate the max minus min for the first max and min in a range.
     # for example: tidal volume = max(x) - min(x)
@@ -478,6 +512,26 @@ def mean_in_range_fraction_change_from_initial(x, start_frac=0.8, end_frac=1.0, 
     range_values_mean = np.mean(x[start_idx:end_idx])
     mean_minus_init = range_values_mean - x[0]
     percentage_change = mean_minus_init / x[0]  # percentage change from initial value
+
+    if series_output:
+        # TODO for plotting should I output the percentage change or the mean minus initial?
+        return x
+    else:
+        return percentage_change
+
+@series_to_constant
+def mean_in_range_fraction_change_from_initial_range(x, start_frac=0.8, end_frac=1.0, series_output=False, init_range_end_frac=0.1):
+    # calculate the mean in a range (normally at the end converged stated) minus the initial value in 
+    # the subexperiment and get the percentage change.
+    # for example:
+       
+    start_idx = int(start_frac*(len(x)-1))
+    end_idx = int(end_frac*(len(x)-1))
+    end_init_idx = int(init_range_end_frac*(len(x)-1))
+    range_values_mean = np.mean(x[start_idx:end_idx])
+    init_range_mean = np.mean(x[:end_init_idx])
+    mean_minus_init = range_values_mean - init_range_mean
+    percentage_change = mean_minus_init / init_range_mean  # percentage change from initial value
 
     if series_output:
         # TODO for plotting should I output the percentage change or the mean minus initial?

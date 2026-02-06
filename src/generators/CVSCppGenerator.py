@@ -48,7 +48,7 @@ class CVS0DCppGenerator(object):
                  solver='CVODE', dtSample=1e-3, dtSolver=1e-4, nMaxSteps=5000,
                  couple_to_1d=False, cpp_generated_models_dir=None,
                  model_1d_config_path=None, create_main_0d=False,
-                 conn_1d_0d_info=None):
+                 conn_1d_0d_info=None, DEBUG=False):
         '''
         Constructor
         '''
@@ -132,6 +132,7 @@ class CVS0DCppGenerator(object):
         self.volume_sum_indeces = []
         self.volume_sum_types = []
 
+        self.DEBUG = DEBUG
 
         # TODO should the annotations stuff be in a different class? It's not crucial for 
         # running of the model but could be useful for making sure we have annotated models
@@ -162,6 +163,11 @@ class CVS0DCppGenerator(object):
 
         self.g = Graph()
         
+    def init_from_inp_data_dict(self, inp_data_dict):
+        '''
+        Initialise the generator from an input data dictionary
+        '''
+        raise NotImplementedError("Not implemented yet")
 
     def annotate_cellml(self):
         print("annotating CellML files, before Cpp generation...")
@@ -1112,7 +1118,11 @@ class CVS0DCppGenerator(object):
         a.analyseModel(flat_model)
         analysed_model = a.model()
 
-        libcellml_utils.print_issues(a)
+        if self.DEBUG:
+            # parse_model seems to print most of the necessary issues, so we don't need to print them here
+            # unless debugging... To check with Hugh
+            libcellml_utils.print_issues(a)
+
 
         print(f"analysed model has type {analysed_model.type()} . Is it ODE type? {analysed_model.type()==AnalyserModel.Type.ODE}")
         # print(f"analysed model has type {analysed_model.type()} . Is it DAE type? {analysed_model.type()==AnalyserModel.Type.DAE}")

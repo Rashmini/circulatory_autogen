@@ -51,8 +51,9 @@ def generate_with_new_architecture(do_generation_with_fit_parameters=False,
 
     model = parser.load_model()
 
-    print("Check point 0")
-    print("\n")
+    if DEBUG:
+        print("Check point 0")
+        print("\n")
 
     if inp_data_dict['model_type'] == 'cellml_only':
         code_generator = CVS0DCellMLGenerator(model, inp_data_dict)
@@ -101,19 +102,21 @@ def generate_with_new_architecture(do_generation_with_fit_parameters=False,
                 print("WARNING: 1D model input files and solver will not be generated. Check they already exist and they run properly.")
                 print("     Otherwise, modify your choice in the user input yaml file.")
                
-            # TODO F2B, please remove these prints or use if DEBUG ... 
-            print("Check point 1A")
+            if DEBUG:
+                print("Check point 1A")
 
-            code_generator = CVS0DCppGenerator(model, generated_models_subdir, file_prefix_0d, #XXX
+            code_generator = CVS0DCppGenerator(model, generated_models_subdir, file_prefix, #XXX
                                             resources_dir=resources_dir, solver=solver_cpp, 
                                             dtSample=dtSample, dtSolver=dtSolver, nMaxSteps=nMaxSteps,
                                             couple_to_1d=inp_data_dict['couple_to_1d'],
                                             cpp_generated_models_dir=cpp_generated_models_dir,
                                             model_1d_config_path=model_1d_config_path,
                                             create_main_0d=create_main_0d,
-                                            conn_1d_0d_info=parser.conn_1d_0d_info)
+                                            conn_1d_0d_info=parser.conn_1d_0d_info,
+                                            DEBUG=DEBUG)
             
-            print("Check point 2A")
+            if DEBUG:
+                print("Check point 2A")
             
             code1d_generator = None
             if generate_1d:
@@ -131,29 +134,36 @@ def generate_with_new_architecture(do_generation_with_fit_parameters=False,
                 else:
                     sys.exit('ERROR :: solver_1d_type not found in user input yaml file. Please specify your 1D solver type.')
 
-            print("Check point 3A")
+            if DEBUG:
+                print("Check point 3A")
     
         else:
             # object from class CVS0DCppGenerator
-            print("Check point 1B")
+            if DEBUG:
+                print("Check point 1B")
             code_generator = CVS0DCppGenerator(model, generated_models_subdir, file_prefix,
                                             resources_dir=resources_dir, solver=solver_cpp,
                                             dtSample=dtSample, dtSolver=dtSolver, nMaxSteps=nMaxSteps)
-            print("Check point 2B")
+            if DEBUG:
+                print("Check point 2B")
 
 
         code_generator.generate_cellml(inp_data_dict)
-        print("Check point 3")
+        if DEBUG:
+            print("Check point 3")
         code_generator.annotate_cellml()
-        print("Check point 4")
+        if DEBUG:
+            print("Check point 4")
         success0d = code_generator.generate_cpp()
-        print(f"Check point with success (0d) {success0d}")
+        if DEBUG:
+            print(f"Check point with success (0d) {success0d}")
         
         success1d = True
         if inp_data_dict['couple_to_1d']:
             if generate_1d:
                 success1d = code1d_generator.generate_files()
-        print(f"Check point with success (1d) {success1d}")
+        if DEBUG:
+            print(f"Check point with success (1d) {success1d}")
 
         if success0d and success1d:
             success = True
