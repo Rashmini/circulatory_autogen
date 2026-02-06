@@ -156,7 +156,8 @@ class sobol_SA():
         self.operation_funcs_dict = self.sfp.add_user_operation_func(self.operation_funcs_dict, func)
         
     def set_ground_truth_data(self, obs_data_dict):
-        print(f'Setting ground truth data: {obs_data_dict}')
+        if self.rank == 0:
+            print(f'Setting ground truth data: {obs_data_dict}')
         if self.obs_and_param_parser is None:
             self.obs_and_param_parser = ObsAndParamDataParser()
         parsed_data = self.obs_and_param_parser.parse_obs_data_json(
@@ -174,16 +175,19 @@ class sobol_SA():
             protocol_info=self.protocol_info,
             dt=self.dt
         )
-        print(f'Ground truth data set: {self.obs_info}')
+        if self.rank == 0:
+            print(f'Ground truth data set: {self.obs_info}')
     
     def set_params_for_id(self, params_for_id_dict):
-        print(f'Setting params for id: {params_for_id_dict}')
+        if self.rank == 0:
+            print(f'Setting params for id: {params_for_id_dict}')
         if self.obs_and_param_parser is None:
             self.obs_and_param_parser = ObsAndParamDataParser()
         self.param_id_info = self.obs_and_param_parser.get_param_id_info_from_entries(params_for_id_dict)
         self.obs_and_param_parser.save_param_names(self.param_id_info, self.output_dir)
         self.create_SA_info(self.sample_type, self.SA_info["num_samples"])
-        print(f'Params for id set: {self.param_id_info["param_names"]}')
+        if self.rank == 0:
+            print(f'Params for id set: {self.param_id_info["param_names"]}')
 
     def set_sa_options(self, sa_options):
         self.SA_info = self._create_SA_info(sa_options['sample_type'], sa_options['num_samples'])
@@ -253,7 +257,10 @@ class sobol_SA():
     def run_model_and_get_results(self, param_vals):
         self.sim_helper.set_param_vals(self.SA_info["param_names"], param_vals)
         self.sim_helper.reset_states()
-        self.sim_helper.run()
+        success = self.sim_helper.run()
+        if not success:
+            print(f"[MPI Rank {self.rank}] Failed to converge for params: {param_vals}")
+            return None
 
         operands = self.sim_helper.get_results(self.obs_info["operands"])
 
