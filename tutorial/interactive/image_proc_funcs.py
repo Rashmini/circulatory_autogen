@@ -27,7 +27,7 @@ import subprocess
 from glob import glob
 from pathlib import Path
 
-from generate_vessel_array import *
+# from generate_vessel_array import *
 from generate_param_array import *
 
 ###############################
@@ -611,8 +611,10 @@ class VesselNetwork():
 
         print('Generating Parameter Array...')
 
-        root_dir = os.path.dirname(__file__)
-        root_dir_src = os.path.join(root_dir, 'src')
+        root_dir = os.path.dirname(os.path.abspath(__file__))
+        root_dir = os.path.dirname(root_dir)
+        root_dir = os.path.dirname(root_dir)
+
         sys.path.append(os.path.join(root_dir, 'src'))
 
         user_inputs_dir = os.path.join(root_dir, 'user_run_files')
@@ -625,7 +627,7 @@ class VesselNetwork():
         vessels_csv_abs_path = inp_data_dict['vessels_csv_abs_path']
         parameters_csv_abs_path = inp_data_dict['parameters_csv_abs_path']
 
-        parser = CSV0DModelParser(vessels_csv_abs_path, parameters_csv_abs_path)
+        parser = CSV0DModelParser(inp_data_dict)
 
         vessels_df = pd.read_csv(parser.vessel_filename, header=0, dtype=str)
         vessels_df = vessels_df.fillna('')
@@ -641,7 +643,7 @@ class VesselNetwork():
         self.parameter_df = pd.DataFrame(columns=column_types.keys()).astype(column_types)
 
         # module_config_fold1 = root_dir_src + '/generators/resources/'
-        module_config_fold2 = root_dir + '/module_config_dale/'
+        module_config_fold2 = root_dir + '/module_config_user/'
         modules = []
         # for filename in os.listdir(module_config_fold1):
         #     if filename.endswith(".json"):
@@ -1395,7 +1397,7 @@ def _order_voxel_path(path_voxels_zyx, start_node_pos_zyx):
 ### // Main (Function) // ###
 #############################
 
-def run_image_to_model(target_image_path, ilastik_path, model_path, input_batch_processing_path, output_batch_processing_path, output_dir, sub_volume, run_ilastik_batch_processing):
+def run_image_to_model(target_image_path, resources_path, ilastik_path, model_path, input_batch_processing_path, output_batch_processing_path, output_dir, sub_volume, run_ilastik_batch_processing):
 
     ############################
     ### // Ilastik Config // ###
@@ -2669,7 +2671,7 @@ def run_image_to_model(target_image_path, ilastik_path, model_path, input_batch_
 
     vessel_network.generate_vessel_array()
 
-    vessel_array_csv_filepath = output_dir / 'image_to_model_vessel_array.csv'
+    vessel_array_csv_filepath = resources_path / 'image_to_model_vessel_array.csv'
     vessel_network.vessel_df.to_csv(vessel_array_csv_filepath, index=False)
 
     vessel_network.generate_parameter_array()
