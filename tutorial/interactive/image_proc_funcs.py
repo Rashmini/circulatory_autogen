@@ -72,6 +72,30 @@ class VesselNetwork():
         ### // Define main function // ###
         ##################################
 
+        # ============================================================
+        # Sanitize Adjacency Matrix: Remove Bidirectional Connections
+        # ============================================================
+        # This prevents the "Short Circuit" error where two vessels 
+        # are inputs and outputs to each other.
+        
+        # Find all pairs (i, j) where both i->j and j->i exist
+        rows, cols = np.where((self.C_vessel == 1) & (self.C_vessel.T == 1))
+        
+        for r, c in zip(rows, cols):
+            # Only process each pair once (when row < col)
+            if r < c: 
+                print(f"  [WARNING] Found bidirectional loop between Vessel {r} ({self.vessel_names[r]}) "
+                      f"and Vessel {c} ({self.vessel_names[c]}).")
+                print(f"  -> Fixing by removing connection {c} -> {r} (Enforcing {r} -> {c})")
+                
+                # Arbitrarily cut the 'return' path to enforce DAG (Directed Acyclic Graph)
+                # You could add logic here to keep the direction based on Z-height if needed
+                self.C_vessel[c, r] = 0 
+
+        # Also remove self-loops (vessel connected to itself)
+        np.fill_diagonal(self.C_vessel, 0)
+        # ============================================================
+
         ### // Initialise Variables // ###
         
         n_vessel = self.C_vessel.shape[0]
@@ -1064,7 +1088,7 @@ class VesselNetwork():
 
                     P = copy(vessel_param_df.loc[vessel_param_df['vessel_name'] == vessel_name, 'u_0'].iloc[0])
                     vessel_param_df.loc[vessel_param_df['vessel_name'] == vessel_name, 'u_0'] = np.nan
-                    vessel_param_df.loc[vessel_param_df['vessel_name'] == vessel_name, 'P'] = P
+                    vessel_param_df.loc[vessel_param_df['vessel_name'] == vessel_name, 'P'] = str(P)
 
             vessel_param_df['u_ext'] = vessel_param_df['u_ext'].replace('to_fill', 0.)
             vessel_param_df['theta'] = vessel_param_df['u_ext'].replace('to_fill', 0.)
@@ -1521,7 +1545,7 @@ def run_image_to_model(target_image_path, resources_path, ilastik_path, model_pa
     ### // Circulatory Autogen Config // ###
     ########################################
 
-    run_circ_autogen = False
+    run_circ_autogen = True
 
     #################################
     ### // Ilastik Shenanigans // ###
@@ -2671,14 +2695,18 @@ def run_image_to_model(target_image_path, resources_path, ilastik_path, model_pa
 
     vessel_network.generate_vessel_array()
 
-    vessel_array_csv_filepath = resources_path / 'image_to_model_vessel_array.csv'
-    vessel_network.vessel_df.to_csv(vessel_array_csv_filepath, index=False)
+    vessel_array_csv_filepath_resources = resources_path / 'image_to_model_vessel_array.csv'
+    vessel_array_csv_filepath_user_output = output_dir / 'image_to_model_vessel_array.csv'
+    vessel_network.vessel_df.to_csv(vessel_array_csv_filepath_resources, index=False)
+    vessel_network.vessel_df.to_csv(vessel_array_csv_filepath_user_output, index=False)
 
     vessel_network.generate_parameter_array()
     vessel_network.populate_parameter_array()
 
-    parameters_csv_abs_path_temp = output_dir / 'image_to_model_parameters.csv'
-    vessel_network.parameter_df.to_csv(parameters_csv_abs_path_temp, index=False, header=True)
+    parameters_csv_abs_path_temp_resources = resources_path / 'image_to_model_parameters.csv'
+    parameters_csv_abs_path_temp_user_output = output_dir / 'image_to_model_parameters.csv'
+    vessel_network.parameter_df.to_csv(parameters_csv_abs_path_temp_resources, index=False, header=True)
+    vessel_network.parameter_df.to_csv(parameters_csv_abs_path_temp_user_output, index=False, header=True)
 
     #####################################
     ### // Run Circulatory Autogen // ###
@@ -2694,6 +2722,6 @@ def run_image_to_model(target_image_path, resources_path, ilastik_path, model_pa
         # No capture_output=True here. 
         # The output will stream directly to your console.
         subprocess.run(
-            ["python", "-u", script_path],  # -u is important for real-time printing!
+            [sys.executable, "-u", script_path, "False"],  # -u is important for real-time printing!
             cwd=script_dir
         )

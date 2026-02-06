@@ -3,7 +3,7 @@
         "vessel_type":"P_inlet",
         "BC_type":"nn",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"constant_pressure_BC_type_dale",
         "entrance_ports":
         [
@@ -27,7 +27,7 @@
         "vessel_type":"Q_inlet",
         "BC_type":"nn",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"constant_flow_BC_type_dale",
         "entrance_ports":
         [
@@ -50,7 +50,7 @@
         "vessel_type":"artery_Minlet",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_Minlet_type_dale",
         "entrance_ports":
         [
@@ -103,7 +103,7 @@
         "vessel_type":"arteriole_Minlet",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_Minlet_type_dale",
         "entrance_ports":
         [
@@ -156,7 +156,7 @@
         "vessel_type":"capillary_Minlet",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_Minlet_type_dale",
         "entrance_ports":
         [
@@ -209,7 +209,7 @@
         "vessel_type":"venule_Minlet",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_Minlet_type_dale",
         "entrance_ports":
         [
@@ -262,7 +262,7 @@
         "vessel_type":"vein_Minlet",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_Minlet_type_dale",
         "entrance_ports":
         [
@@ -315,7 +315,7 @@
         "vessel_type":"artery_Nout",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_Nout_type_dale",
         "entrance_ports":
         [
@@ -368,7 +368,7 @@
         "vessel_type":"arteriole_Nout",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_Nout_type_dale",
         "entrance_ports":
         [
@@ -421,7 +421,7 @@
         "vessel_type":"capillary_Nout",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_Nout_type_dale",
         "entrance_ports":
         [
@@ -474,7 +474,7 @@
         "vessel_type":"venule_Nout",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_Nout_type_dale",
         "entrance_ports":
         [
@@ -527,7 +527,7 @@
         "vessel_type":"vein_Nout",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_Nout_type_dale",
         "entrance_ports":
         [
@@ -580,7 +580,7 @@
         "vessel_type":"artery_inlet",
         "BC_type":"pp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pp_type_dale",
         "entrance_ports":
         [
@@ -636,7 +636,7 @@
         "vessel_type":"artery_inlet",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_type_dale",
         "entrance_ports":
         [
@@ -696,7 +696,7 @@
         "vessel_type":"artery_outlet",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_type_dale",
         "entrance_ports":
         [
@@ -747,7 +747,7 @@
         "vessel_type":"artery_outlet",
         "BC_type":"pp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pp_type_dale",
         "entrance_ports":
         [
@@ -803,7 +803,7 @@
         "vessel_type":"artery",
         "BC_type":"pp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pp_type_dale",
         "entrance_ports":
         [
@@ -859,7 +859,7 @@
         "vessel_type":"arteriole",
         "BC_type":"pp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pp_simple_type",
         "entrance_ports":
         [
@@ -898,10 +898,10 @@
       },
 
       {
-        "vessel_type":"capillary",
+        "vessel_type":"capillary_CB",
         "BC_type":"pp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pp_capillary_type_dale",
         "entrance_ports":
         [
@@ -962,7 +962,7 @@
         "vessel_type":"venule",
         "BC_type":"pp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pp_simple_type",
         "entrance_ports":
         [
@@ -1004,7 +1004,7 @@
         "vessel_type":"vein",
         "BC_type":"pp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pp_simple_type",
         "entrance_ports":
         [
@@ -1046,7 +1046,7 @@
         "vessel_type":"artery",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_type_dale",
         "entrance_ports":
         [
@@ -1106,7 +1106,7 @@
         "vessel_type":"arteriole",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_simple_type",
         "entrance_ports":
         [
@@ -1144,10 +1144,10 @@
       },
 
       {
-        "vessel_type":"capillary",
+        "vessel_type":"capillary_CB",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_simple_type",
         "entrance_ports":
         [
@@ -1188,7 +1188,7 @@
         "vessel_type":"venule",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_simple_type",
         "entrance_ports":
         [
@@ -1229,7 +1229,7 @@
         "vessel_type":"vein",
         "BC_type":"pv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"pv_simple_type",
         "entrance_ports":
         [
@@ -1270,7 +1270,7 @@
         "vessel_type":"artery",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_type_dale",
         "entrance_ports":
         [
@@ -1321,7 +1321,7 @@
         "vessel_type":"arteriole",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_simple_type",
         "entrance_ports":
         [
@@ -1359,10 +1359,10 @@
       },
 
       {
-        "vessel_type":"capillary",
+        "vessel_type":"capillary_CB",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_capillary_type_dale",
         "entrance_ports":
         [
@@ -1422,7 +1422,7 @@
         "vessel_type":"venule",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_simple_type",
         "entrance_ports":
         [
@@ -1463,7 +1463,7 @@
         "vessel_type":"vein",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_simple_type",
         "entrance_ports":
         [
@@ -1504,7 +1504,7 @@
         "vessel_type":"artery",
         "BC_type":"vv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vv_type_dale",
         "entrance_ports":
         [
@@ -1559,7 +1559,7 @@
         "vessel_type":"arteriole",
         "BC_type":"vv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vv_simple_type",
         "entrance_ports":
         [
@@ -1601,10 +1601,10 @@
       },
 
       {
-        "vessel_type":"capillary",
+        "vessel_type":"capillary_CB",
         "BC_type":"vv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vv_simple_type",
         "entrance_ports":
         [
@@ -1649,7 +1649,7 @@
         "vessel_type":"venule",
         "BC_type":"vv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vv_simple_type",
         "entrance_ports":
         [
@@ -1694,7 +1694,7 @@
         "vessel_type":"vein",
         "BC_type":"vv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vv_simple_type",
         "entrance_ports":
         [
@@ -1739,7 +1739,7 @@
         "vessel_type":"artery_Min",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_Min_type_dale",
         "entrance_ports":
         [
@@ -1787,7 +1787,7 @@
         "vessel_type":"arteriole_Min",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_Min_type_dale",
         "entrance_ports":
         [
@@ -1835,7 +1835,7 @@
         "vessel_type":"capillary_Min",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_Min_type_dale",
         "entrance_ports":
         [
@@ -1883,7 +1883,7 @@
         "vessel_type":"venule_Min",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_Min_type_dale",
         "entrance_ports":
         [
@@ -1931,7 +1931,7 @@
         "vessel_type":"vein_Min",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_Min_type_dale",
         "entrance_ports":
         [
@@ -1979,7 +1979,7 @@
         "vessel_type":"artery_MinNout",
         "BC_type":"vv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vv_MinNout_type_dale",
         "entrance_ports":
         [
@@ -2031,7 +2031,7 @@
         "vessel_type":"artery_Min",
         "BC_type":"vv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vv_Min_type_dale",
         "entrance_ports":
         [
@@ -2082,7 +2082,7 @@
         "vessel_type":"artery_Nout",
         "BC_type":"vv",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vv_Nout_type_dale",
         "entrance_ports":
         [
@@ -2133,7 +2133,7 @@
         "vessel_type":"artery_Noutlet",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_Noutlet_type_dale",
         "entrance_ports":
         [
@@ -2181,7 +2181,7 @@
         "vessel_type":"arteriole_Noutlet",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_Noutlet_type_dale",
         "entrance_ports":
         [
@@ -2229,7 +2229,7 @@
         "vessel_type":"capillary_Noutlet",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_Noutlet_type_dale",
         "entrance_ports":
         [
@@ -2277,7 +2277,7 @@
         "vessel_type":"venule_Noutlet",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_Noutlet_type_dale",
         "entrance_ports":
         [
@@ -2325,7 +2325,7 @@
         "vessel_type":"vein_Noutlet",
         "BC_type":"vp",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"vp_Noutlet_type_dale",
         "entrance_ports":
         [
@@ -2373,7 +2373,7 @@
         "vessel_type":"P_outlet",
         "BC_type":"nn",
         "module_format":"cellml",
-        "module_file":"CB_network_modules.cellml",
+        "module_file":"image_model_modules.cellml",
         "module_type":"constant_pressure_BC_type_dale",
         "entrance_ports":
         [
