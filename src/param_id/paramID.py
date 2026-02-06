@@ -246,8 +246,6 @@ class CVS0DParamID():
             raise ValueError('Protocol info not set')
         if self.obs_info is None:
             raise ValueError('Obs info not set')
-        if self.prediction_info is None:
-            raise ValueError('Prediction info not set')
         if self.param_id_info is None:
             raise ValueError('Param id info not set')
 
