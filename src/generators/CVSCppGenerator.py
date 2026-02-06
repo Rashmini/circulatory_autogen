@@ -2964,7 +2964,7 @@ void Model0d::solveOneStep(double dtLoc)
     if (N1d0dTot>0){
         read_pipe_dt.read(reinterpret_cast<char*>(parent_data_dt), DATA_LENGTH * sizeof(double));
         dt = parent_data_dt[1];
-        std::cout << \"0d solver :: Received negative 0d internal time step dtLoc \" << dt << std::endl;
+        // std::cout << \"0d solver :: Received negative 0d internal time step dtLoc \" << dt << std::endl;
         dt = dtLoc; // reset value
     }
 """
@@ -3099,7 +3099,7 @@ void Model0d::solveOneStep(double dtLoc)
     if (N1d0dTot>0){
         read_pipe_dt.read(reinterpret_cast<char*>(parent_data_dt), DATA_LENGTH * sizeof(double));
         dt = parent_data_dt[1];
-        std::cout << \"0d solver :: Received negative 0d internal time step dtLoc \" << dt << std::endl;
+        // std::cout << \"0d solver :: Received negative 0d internal time step dtLoc \" << dt << std::endl;
         dt = dtLoc; // reset value
     }
 """
@@ -3494,8 +3494,8 @@ if (pop_bool == 1) {{
 
         # TODO modify below with respect to circulatory_autogen inputs
         # When coupling with a Cpp model that does the simulation, this isn't needed
-        mainScript = f"""
-int main(void){{
+        mainScript = """
+int main(int argc, char* argv[]){
 """
         if self.solver == 'PETSC':
             mainScript += """
@@ -3504,7 +3504,7 @@ int main(void){{
     std::cout << "PETSc :: initialization complete " << ierr << std::endl;
 
     std::cout << "Starting 0D model simulation..." << std::endl;
-    {{
+    {
 """
         else:
             mainScript += """
@@ -3512,8 +3512,8 @@ int main(void){{
 """
 
         mainScript += f"""
-    double end_time = 5.0;
-    double save_time = 4.0;
+    double end_time = 20.0;
+    double save_time = 18.0;
     double dt = {self.dtSolver};
     double eps = 1e-12;
     std::string ODEsolver = \"{self.solver}\";
@@ -3573,6 +3573,7 @@ int main(void){{
 
     printf("Done.\\n");
     return 0;
+}
 """
         else:
             mainScript += """
