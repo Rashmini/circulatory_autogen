@@ -729,6 +729,8 @@ class VesselNetwork():
         self.vessel_df = pd.concat([self.vessel_df, inlet_outlet_vessels_df], ignore_index=True)
         self.vessel_df['BC_type'] = self.vessel_df['BC_type'].astype(str) + '_micro'
 
+        print('Network Solved!')
+
         
 
     def generate_parameter_array(self, inp_data_dict=None):
