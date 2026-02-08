@@ -1,64 +1,13 @@
 #_______ general inputs ________
 DEBUG: false # TODO change back
 
-# user_inputs_path_override: false
+# user_inputs_path_override: 
 
-# user_inputs_path_override: /home/bghi639/Software/circulatory_autogen_TUTORIAL/trainingschool01/20250318-day01/simple_physiological_nonlinear_visco/simple_physiological_user_inputs.yaml
-# user_inputs_path_override: /home/bghi639/Software/circulatory_autogen_TUTORIAL/trainingschool01/20250320-day03/smc_with_piezo/smc_with_piezo_user_inputs.yaml
-# user_inputs_path_override: /home/bghi639/Software/circulatory_autogen_TUTORIAL/trainingschool01/20250321-day04/coupled_CVS_smc/coupled_CVS_smc_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Work/VITALProject/WP2/TASK2.6/ST1_CVSAnatomicalDefinition/MVP_CVSmodel_BG-CAcoupling/CA_files/BG_cvs_MVP_model_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Work/VITALProject/WP2/TASK2.6/ST1_CVSAnatomicalDefinition/MVP_CVSmodel_BG-CAcoupling/CA_files/BG_cvs_MVP_model_2_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Work/VITALProject/WP2/TASK2.6/ST1_CVSAnatomicalDefinition/MVP_CVSmodel_BG-CAcoupling/CA_files/BG_cvs_MVP_model_new_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Work/VITALProject/WP2/TASK2.6/ST1_CVSAnatomicalDefinition/MVP_CVSmodel_BG-CAcoupling/CA_files/BG_cvs_MVP_model_new_calib_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Work/VITALProject/WP2/TASK2.6/ST1_CVSAnatomicalDefinition/MVP_CVSmodel_BG-CAcoupling/CA_files/BG_cvs_MVP_model_new_calib_linear_user_inputs.yaml
-
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_0d_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_0d_v2_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_0d_v2_RK4_user_inputs.yaml
-
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_hybrid_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_hybrid_test_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_hybrid_new_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_hybrid_new2_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_hybrid_new2_RK4_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_hybrid_new2_CVODE_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_hybrid_new2_PETSC_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_hybrid_new3_user_inputs.yaml
-
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/aortic_bif_hybrid_multi_user_inputs.yaml
-
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/3compartment_0d_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/3compartment_mod_0d_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/3compartment_mod_0d_sumBV_v2_user_inputs.yaml
-
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/3compartment_hybrid_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/3compartment_mod_hybrid_v1_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/1D-0D-coupler-cpp-example/CA_files/3compartment_mod_hybrid_sumBV_v3_user_inputs.yaml
-
-# user_inputs_path_override: /hpc/bghi639/Work/VITALProject/WP2/TASK2.6/ST1_CVSAnatomicalDefinition/CVS_Topology_Arborizer/Stage1-VITAL/stage1_model_male_openloop/CA_files/stage1_model_male_art_openloop_FINAL_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Work/VITALProject/WP2/TASK2.6/ST1_CVSAnatomicalDefinition/CVS_Topology_Arborizer/Stage1-VITAL/stage1_model_male_openloop/CA_files/stage1_model_male_art_closedloopsimple_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Work/VITALProject/WP2/TASK2.6/ST1_CVSAnatomicalDefinition/CVS_Topology_Arborizer/Stage1-VITAL/stage1_model_male_openloop/CA_files/stage1_model_male_art_closedloopsimple_FINAL_user_inputs.yaml
-
-# user_inputs_path_override: /home/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_0d/cvs_model_0d_user_inputs.yaml
-# user_inputs_path_override: /home/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_with_arm_0d/cvs_model_with_arm_0d_user_inputs.yaml
-# user_inputs_path_override: /home/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_with_arm_hybrid/cvs_model_with_arm_hybrid_user_inputs.yaml
-
-# user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_0d/cvs_model_0d_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_0d_V2/cvs_model_0d_V2_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_0d_elastic/cvs_model_0d_elastic_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_0d_cpp/cvs_model_0d_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_hybrid/cvs_model_hybrid_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_hybrid_OL/cvs_model_hybrid_OL_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_with_arm_0d/cvs_model_with_arm_0d_user_inputs.yaml
-# user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_with_arm_0d_cpp/cvs_model_with_arm_0d_user_inputs.yaml
-user_inputs_path_override: /hpc/bghi639/Software/VITAL_TrainingSchool2_Tutorials/cvs_model_with_arm_hybrid/cvs_model_with_arm_hybrid_user_inputs.yaml
-
-# file_prefix: 3compartment
+file_prefix: 3compartment
 # file_prefix: aortic_bif_0d
 # file_prefix: aortic_bif_0d_super_random_nonlinear
 # file_prefix: generic_junction_test_openloop
 # file_prefix: generic_junction_test_closedloop
-file_prefix: undefined
 
 # input_param_file must be stored in resources. If first creating a parameters file 
 # set this to parameters_orig.csv and a 
@@ -123,12 +72,7 @@ solver_info:
 # param_id_obs_path needs to be an absolute path.
 # This for 3compartment
 # param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/3compartment_obs_data.json
-<<<<<<< HEAD
-# param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/3compartment_obs_data.json
-param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/SN_simple_obs_data.json
-=======
 param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/3compartment_obs_data.json
->>>>>>> 6a2c289ce3107b36374d90561329117eea4928b1
 # param_id_obs_path: /home/farg967/Documents/test/resources/3compartment_obs_data.json
 # param_id_obs_path: /hpc/bghi639/Software/circulatory_autogen/resources/simple_physiological_nonlinear_visco_obs_data.json
 
