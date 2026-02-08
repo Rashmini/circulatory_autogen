@@ -7,11 +7,14 @@
 import sys
 import os
 
-# --- CRITICAL FIXES FOR DOCKER HANGS ---
-# 1. Force Matplotlib to not use a window (fixes Pandas plotting hangs)
+# --- CRITICAL FIX: PREVENT DEADLOCKS ---
+# Force all math libraries to use 1 thread to stop freezing
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['NUMEXPR_NUM_THREADS'] = '1'
+# Force Matplotlib to not use a window
 os.environ['MPLBACKEND'] = 'Agg' 
-# 2. Prevent Math library deadlocks (fixes Numpy/Pandas hangs)
-os.environ['OPENBLAS_NUM_THREADS'] = '1' 
 # ---------------------------------------
 
 # --- DEBUG: Start ---
@@ -94,7 +97,12 @@ class VesselNetwork():
 
     def generate_vessel_array(self):
 
+        # --- LAZY LOAD ---
         import pandas as pd
+        from copy import copy
+        import time
+        # -----------------
+
         print('Generating Vessel Array...')
 
         #####################################
@@ -200,6 +208,12 @@ class VesselNetwork():
 
         while N_ITER <= MAX_ITER:
 
+            # --- DEADLOCK BREAKER ---
+            # Sleep for 0.1s to let CPU threads untangle. This fixes the Docker freeze.
+            time.sleep(0.1) 
+            print(f"DEBUG: Starting Iteration {N_ITER}...", flush=True)
+            # ------------------------
+            
             ### // (Re)-Assign and get idxs of in-out, and multi-in/out vessels respectively, and (re)-assign junc_types // ###
 
             n_vessel_in_out_idx = np.array([]).astype(int)
@@ -1257,6 +1271,8 @@ class IlastikClassifier():
 ##################################
 
 def load_segmentation_data(filepath, hdf5_dataset_name=None):
+    import tifffile
+
     if not filepath:
         print("Error: Input file path is not set.")
         return None
@@ -1425,6 +1441,11 @@ def create_mask_for_line(p1_img, p2_img, shape):
     return line_mask
 
 def _order_voxel_path(path_voxels_zyx, start_node_pos_zyx):
+    
+    # --- LAZY LOAD ---
+    from scipy.spatial import KDTree  # <--- PASTE THIS HERE
+    # -----------------
+
     """
     Orders a set of unordered voxel coordinates into a continuous path.
 
@@ -1482,7 +1503,11 @@ def run_image_to_model(target_image_path, resources_path, ilastik_path, model_pa
     # --- LAZY LOAD IMPORTS ---
     import pandas as pd
     import networkx as nx
+    import vedo
     # -------------------------
+
+    # Prevent crashing by looking for a screen that doesn't exist
+    vedo.settings.default_backend = 'k3d'
     
     ############################
     ### // Ilastik Config // ###
