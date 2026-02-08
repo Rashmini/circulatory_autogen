@@ -4,31 +4,78 @@
 ### // Imports // ###
 #####################
 
-import os
-import numpy as np
-import skimage
-from skimage.transform import rescale, resize
-import vedo
-from tqdm import tqdm
-import h5py
-import tifffile
-from scipy import ndimage
-from scipy.spatial import KDTree
-import pandas as pd
-import ast
-from ast import literal_eval
-from copy import copy
-import random
 import sys
-import json
-import networkx as nx
-import re
-import subprocess
-from glob import glob
-from pathlib import Path
+import os
 
-# from generate_vessel_array import *
-from generate_param_array import *
+# --- CRITICAL FIXES FOR DOCKER HANGS ---
+# 1. Force Matplotlib to not use a window (fixes Pandas plotting hangs)
+os.environ['MPLBACKEND'] = 'Agg' 
+# 2. Prevent Math library deadlocks (fixes Numpy/Pandas hangs)
+os.environ['OPENBLAS_NUM_THREADS'] = '1' 
+# ---------------------------------------
+
+# --- DEBUG: Start ---
+print("--- [DEBUG] Starting Imports in image_proc_funcs.py ---", file=sys.stderr)
+
+try:
+    print("--- [DEBUG] Importing numpy...", file=sys.stderr)
+    import numpy as np
+    
+    print("--- [DEBUG] Importing skimage...", file=sys.stderr)
+    import skimage
+    from skimage.transform import rescale, resize
+    
+    # print("--- [DEBUG] Importing vedo...", file=sys.stderr)
+    # import vedo
+    # # CRITICAL FIX: Prevent vedo from looking for a window manager
+    # vedo.settings.default_backend = 'k3d' 
+    # vedo.settings.screeshot_large_image = True
+    
+    print("--- [DEBUG] Importing tqdm...", file=sys.stderr)
+    from tqdm import tqdm
+    
+    print("--- [DEBUG] Importing h5py...", file=sys.stderr)
+    import h5py
+    
+    # print("--- [DEBUG] Importing tifffile...", file=sys.stderr)
+    # import tifffile
+    
+    print("--- [DEBUG] Importing scipy...", file=sys.stderr)
+    from scipy import ndimage
+    from scipy.spatial import distance_matrix
+    
+    # print("--- [DEBUG] Importing pandas...", file=sys.stderr)
+    # import pandas as pd
+    
+    print("--- [DEBUG] Importing ast...", file=sys.stderr)
+    from ast import literal_eval
+    
+    print("--- [DEBUG] Importing standard libs (copy, random, json, re, subprocess, glob)...", file=sys.stderr)
+    from copy import deepcopy
+    import random
+    import json
+    import re
+    import subprocess
+    from glob import glob
+    
+    # print("--- [DEBUG] Importing networkx...", file=sys.stderr)
+    # import networkx as nx
+    
+    print("--- [DEBUG] Importing pathlib...", file=sys.stderr)
+    from pathlib import Path
+
+    # NOTE: If you have imports from other local files, add them here too
+    # print("--- [DEBUG] Importing local modules...", file=sys.stderr)
+    # from generate_param_array import VesselNetwork
+
+    print("--- [DEBUG] ALL IMPORTS SUCCESSFUL ---", file=sys.stderr)
+
+except Exception as e:
+    print(f"\n!!! [CRITICAL ERROR] Import crashed: {e} !!!\n", file=sys.stderr)
+    raise e
+
+# # from generate_vessel_array import *
+# from generate_param_array import *
 
 ###############################
 ### // Class Definitions // ###
@@ -37,7 +84,7 @@ from generate_param_array import *
 class VesselNetwork():
     
     def __init__(self, C_vessel, vessel_names, vessel_mods, vessel_centroids=None):
-            
+
             self.C_vessel = C_vessel
             self.vessel_names = vessel_names
             self.vessel_mods = vessel_mods
@@ -47,6 +94,7 @@ class VesselNetwork():
 
     def generate_vessel_array(self):
 
+        import pandas as pd
         print('Generating Vessel Array...')
 
         #####################################
@@ -633,6 +681,11 @@ class VesselNetwork():
 
     def generate_parameter_array(self, inp_data_dict=None):
 
+        # --- LAZY LOAD ---
+        import pandas as pd
+        from generate_param_array import YamlFileParser, CSV0DModelParser 
+        # -----------------
+
         print('Generating Parameter Array...')
 
         root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -811,6 +864,8 @@ class VesselNetwork():
 
     def populate_parameter_array(self):
 
+        import pandas as pd   # <--- PASTE THIS
+        import networkx as nx # <--- PASTE THIS
         print('Populating Parameter Array...')
 
         ### // Extract all variable types from parameter_df // ###
@@ -1133,6 +1188,7 @@ class IlastikClassifier():
         :param ilastik_binary_path: Path to the ilastik executable.
         :param project_file_path: Path to the trained .ilp project file.
         """
+
         self.binary = ilastik_binary_path
         self.project = project_file_path
         
@@ -1423,6 +1479,11 @@ def _order_voxel_path(path_voxels_zyx, start_node_pos_zyx):
 
 def run_image_to_model(target_image_path, resources_path, ilastik_path, model_path, input_batch_processing_path, output_batch_processing_path, output_dir, sub_volume, run_ilastik_batch_processing):
 
+    # --- LAZY LOAD IMPORTS ---
+    import pandas as pd
+    import networkx as nx
+    # -------------------------
+    
     ############################
     ### // Ilastik Config // ###
     ############################
