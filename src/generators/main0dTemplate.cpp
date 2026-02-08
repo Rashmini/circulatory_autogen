@@ -154,7 +154,8 @@ int main(int argc, char* argv[]) {
             // time = std::round(time / tolTime) * tolTime;
 
             saveResTime = 0;
-            if (std::abs(time-tEnd)<=tolTime) {
+            // if (std::abs(time-tEnd)<=tolTime) {
+            if (time>=tEnd-tolTime) {
                 tEnd = tEnd + dtSample;
                 tEnd = std::round(tEnd / tolTime) * tolTime;
                 saveResTime = 1;
@@ -165,7 +166,8 @@ int main(int argc, char* argv[]) {
                 }
             }
             
-            if (std::abs(time-tEndGlob)<=tolTime) {
+            if (time>=tEndGlob-tolTime) {
+            // if (std::abs(time-tEndGlob)<=tolTime) {
             // if (time>=tEndGlob) {
                 std::cout << "### 0d solver :: Stop execution! ###" << std::endl;
                 run_0d = false;
