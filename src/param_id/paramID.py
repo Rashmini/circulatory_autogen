@@ -550,7 +550,7 @@ class CVS0DParamID():
                             axs.axvline(x=t_bf,
                                         color=self.obs_info['plot_colors'][II],
                                         label=f'{self.obs_info["operations"][II]} output')
-                        elif self.obs_info['plot_type'][II] in [None, "None", "none", "NULL", "null", "Null"]:
+                        elif self.obs_info['plot_type'][II] in [None, "None", "none", "NULL", "null", "Null", np.nan, "nan"]:
                             pass
                         else:
                             print(f'plot_type for {self.obs_info["obs_names"][II]} ',
