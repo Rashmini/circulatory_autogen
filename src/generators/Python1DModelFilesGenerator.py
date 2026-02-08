@@ -570,7 +570,7 @@ def generate1DPythonSimInitFile(df_params, vess, nodes, sim_init_file, filename_
     config['discretization'] = {
         'nCellsMin': 2,
         'nCells': -1,
-        'dxMax': 0.1,
+        'dxMax': 1.0, #0.1,
         'NMAX': 10000000000000,
         'T0': T0,
         'tIni': 0.0,
@@ -620,7 +620,7 @@ def generate1DPythonSimInitFile(df_params, vess, nodes, sim_init_file, filename_
         'nV': -1.5,
         'pries': 0,
         'nonlinear': 1,
-        'couplePtot': 1,
+        'couplePtot': 0, # 1,
         'P0A': P0A,
         'P0V': 0.0,
         'PiniA': P0A,

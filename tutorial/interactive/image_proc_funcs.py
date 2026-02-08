@@ -727,6 +727,9 @@ class VesselNetwork():
         
         inlet_outlet_vessels_df = pd.concat([inlet_vessels_df, outlet_vessels_df], ignore_index=True)
         self.vessel_df = pd.concat([self.vessel_df, inlet_outlet_vessels_df], ignore_index=True)
+        self.vessel_df['BC_type'] = self.vessel_df['BC_type'].astype(str) + '_micro'
+
+        
 
     def generate_parameter_array(self, inp_data_dict=None):
 
@@ -1265,8 +1268,7 @@ class IlastikClassifier():
         images = list(input_path.glob(input_ext))
         
         if not images:
-            print(f"No images found in {input_dir} matching {input_ext}")
-            return
+            raise FileNotFoundError(f"No images found in {input_dir} matching {input_ext}")
 
         print(f"Found {len(images)} images. Starting Ilastik engine...")
 
