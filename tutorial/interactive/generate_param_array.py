@@ -16,24 +16,26 @@ from collections import Counter
 from pathlib import Path
 import json
 
-# root_dir = os.path.dirname(__file__)
-# root_dir_src = os.path.join(root_dir, 'src')
-
-root_dir = os.path.dirname(os.path.abspath(__file__))
-root_dir = os.path.dirname(root_dir)
-root_dir = os.path.dirname(root_dir)
-
-sys.path.append(os.path.join(root_dir, 'src'))
-
-user_inputs_dir = os.path.join(root_dir, 'user_run_files')
-
-from parsers.ModelParsers import CSV0DModelParser
-from generators.CVSCellMLGenerator import CVS0DCellMLGenerator
-from generators.CVSCppGenerator import CVS0DCppGenerator
-from parsers.PrimitiveParsers import YamlFileParser
-from parsers.PrimitiveParsers import CSVFileParser
-
 def generate_param_array(inp_data_dict=None):
+
+    # 1. Setup Path (Only when function runs)
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(root_dir)
+    root_dir = os.path.dirname(root_dir)
+
+    src_path = os.path.join(root_dir, 'src')
+    if src_path not in sys.path:
+        sys.path.append(src_path)
+
+    # 2. Import Classes (Lazy Load)
+    from parsers.ModelParsers import CSV0DModelParser
+    from generators.CVSCellMLGenerator import CVS0DCellMLGenerator
+    from generators.CVSCppGenerator import CVS0DCppGenerator
+    from parsers.PrimitiveParsers import YamlFileParser
+    from parsers.PrimitiveParsers import CSVFileParser
+    # --- LAZY LOADING END ---
+
+    user_inputs_dir = os.path.join(root_dir, 'user_run_files')
 
     yaml_parser = YamlFileParser()
     inp_data_dict = yaml_parser.parse_user_inputs_file(inp_data_dict)
