@@ -47,8 +47,8 @@ try:
     from scipy import ndimage
     from scipy.spatial import distance_matrix
     
-    # print("--- [DEBUG] Importing pandas...", file=sys.stderr)
-    # import pandas as pd
+    print("--- [DEBUG] Importing pandas...", file=sys.stderr)
+    import pandas as pd
     
     print("--- [DEBUG] Importing ast...", file=sys.stderr)
     from ast import literal_eval
@@ -66,6 +66,16 @@ try:
     
     print("--- [DEBUG] Importing pathlib...", file=sys.stderr)
     from pathlib import Path
+
+    # --- FIX: GLOBAL PATH SETUP (Hoisted from generate_parameter_array) ---
+    # We set this up ONCE at the start to prevent hanging inside functions.
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(root_dir) # Go up one level
+    root_dir = os.path.dirname(root_dir) # Go up another level (to reach project root)
+    
+    src_path = os.path.join(root_dir, 'src')
+    if src_path not in sys.path:
+        sys.path.append(src_path)
 
     # NOTE: If you have imports from other local files, add them here too
     # print("--- [DEBUG] Importing local modules...", file=sys.stderr)
@@ -731,22 +741,32 @@ class VesselNetwork():
 
         print('Network Solved!')
 
-        
-
     def generate_parameter_array(self, inp_data_dict=None):
 
-        # --- LAZY LOAD ---
-        import pandas as pd
-        from generate_param_array import YamlFileParser, CSV0DModelParser 
-        # -----------------
-
-        print('Generating Parameter Array...')
-
+        # --- LAZY LOAD & BYPASS ---
+        # import pandas as pd
+        
+        # 1. Setup Path to Source (Bypassing generate_param_array.py)
         root_dir = os.path.dirname(os.path.abspath(__file__))
         root_dir = os.path.dirname(root_dir)
         root_dir = os.path.dirname(root_dir)
 
-        sys.path.append(os.path.join(root_dir, 'src'))
+        # 2. Add to sys.path (Only if missing, prevents duplicates)
+        src_path = os.path.join(root_dir, 'src')
+        if src_path not in sys.path:
+            sys.path.append(src_path)
+
+        # 3. Import Parsers
+        try:
+            from parsers.PrimitiveParsers import YamlFileParser
+            from parsers.ModelParsers import CSV0DModelParser
+        except ImportError as e:
+            # If this fails, it usually means the 'src' path calculation is wrong for your folder structure
+            print(f"CRITICAL ERROR: Could not import parsers. Checked path: {src_path}")
+            raise e
+        # -------------------------------
+
+        print('Generating Parameter Array...')
 
         user_inputs_dir = os.path.join(root_dir, 'user_run_files')
 
@@ -760,7 +780,7 @@ class VesselNetwork():
 
         parser = CSV0DModelParser(inp_data_dict)
 
-        vessels_df = pd.read_csv(parser.vessel_filename, header=0, dtype=str)
+        vessels_df = vessels_df = pd.read_csv(parser.vessel_filename, header=0, dtype=str, skipinitialspace=True)
         vessels_df = vessels_df.fillna('')
 
         nVess = vessels_df.shape[0]
@@ -911,15 +931,16 @@ class VesselNetwork():
                                         'data_reference': 'TO_DO'}
                 self.parameter_df = pd.concat([self.parameter_df, pd.DataFrame([new_row])], ignore_index=True)
 
-        parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/image_to_model_parameters.csv'
-        self.parameter_df.to_csv(parameters_csv_abs_path_temp, index=False, header=True)
+        # parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/image_to_model_parameters.csv'
+        self.parameter_df.to_csv(parameters_csv_abs_path, index=False, header=True)
                     
         print('DONE :: Parameters array file for model '+file_prefix+' generated and saved.')
 
     def populate_parameter_array(self):
 
-        import pandas as pd   # <--- PASTE THIS
-        import networkx as nx # <--- PASTE THIS
+        import pandas as pd
+        import networkx as nx
+        from copy import copy
         print('Populating Parameter Array...')
 
         ### // Extract all variable types from parameter_df // ###
@@ -1670,7 +1691,7 @@ def run_image_to_model(target_image_path, resources_path, ilastik_path, model_pa
     ### // Circulatory Autogen Config // ###
     ########################################
 
-    run_circ_autogen = True
+    run_circ_autogen = False
 
     #################################
     ### // Ilastik Shenanigans // ###
@@ -2839,7 +2860,7 @@ def run_image_to_model(target_image_path, resources_path, ilastik_path, model_pa
 
     if run_circ_autogen:
 
-        script_path = "/home/dsas627/PycharmProjects/circulatory_autogen/src/scripts/script_generate_with_new_architecture.py"
+        script_path = Path.cwd().parent.parent / "src/scripts/script_generate_with_new_architecture.py"
         script_dir = os.path.dirname(script_path)
 
         print("Starting script...")
