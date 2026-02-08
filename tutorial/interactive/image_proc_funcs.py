@@ -1160,8 +1160,7 @@ class IlastikClassifier():
         images = list(input_path.glob(input_ext))
         
         if not images:
-            print(f"No images found in {input_dir} matching {input_ext}")
-            return
+            raise FileNotFoundError(f"No images found in {input_dir} matching {input_ext}")
 
         print(f"Found {len(images)} images. Starting Ilastik engine...")
 
