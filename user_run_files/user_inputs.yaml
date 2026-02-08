@@ -23,7 +23,7 @@ param_id_method: genetic_algorithm
 # pre_time is the amount of time simulated to get to steady state
 # TODO this is not important if it is specified in the obs_data.json file
 # TODO I should remove it here and only specify in the obs_data.json file?
-pre_time: 20
+pre_time: 20   
 # sim_time is the amount of simulation time where the outputs are compared to ground truth
 # NOTE: If doing freq domain fitting make sure the simulation is periodic and the sim time is the period.
 sim_time: 2
@@ -40,8 +40,7 @@ sim_time: 2
 
 # This is for cpp generation
 # cpp_generated_models_dir: /home/farg967/software/venous_system/lucas_model/fvm
-cpp_generated_models_dir: 
-  /home/farg967/Documents/git_projects/circulatory_autogen/generated_models/3compartment/
+cpp_generated_models_dir: /home/farg967/Documents/git_projects/circulatory_autogen/generated_models/3compartment/
 # This is for cpp_coupling
 couple_to_1d: false
 cpp_1d_model_config_path: 
@@ -69,8 +68,12 @@ solver_info:
 # param_id_obs_path needs to be an absolute path.
 # This for 3compartment
 # param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/3compartment_obs_data.json
+<<<<<<< HEAD
 # param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/3compartment_obs_data.json
 param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/SN_simple_obs_data.json
+=======
+param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/3compartment_obs_data.json
+>>>>>>> 6a2c289ce3107b36374d90561329117eea4928b1
 # param_id_obs_path: /home/farg967/Documents/test/resources/3compartment_obs_data.json
 # param_id_obs_path: /hpc/bghi639/Software/circulatory_autogen/resources/simple_physiological_nonlinear_visco_obs_data.json
 
@@ -84,6 +87,7 @@ optimiser_options:
   cost_convergence: 0.001        # convergence tolerance (default: 0.0001)
   max_patience: 10              # max patience for convergence (default: 10)
   cost_type: MSE                # cost function type
+  
   # CMA-ES specific options:
   # sigma0: 0.1    # optional, initial standard deviation (default: 0.2 * mean(param_range))
   # Note: Initial parameter values (x0) are automatically loaded from {file_prefix}_parameters.csv
@@ -96,7 +100,7 @@ debug_optimiser_options:
   # Note: When DEBUG is True, debug_optimiser_options overrides optimiser_options
 
 #______ mcmc inputs ___________
-do_mcmc: true
+do_mcmc: True
 mcmc_options:
   num_steps: 1000
   num_walkers: 64
@@ -111,13 +115,13 @@ debug_mcmc_options:
   cost_convergence: 0.001
 
 sa_options:
-  method: sobol
-  sample_type: saltelli
+  method: sobol 
+  sample_type: 'saltelli'
   num_samples: 256 # this is multiplied by (2M + 2) to get the actual number of samples (M is the number of parameters).
     # output_dir: /non/default/path
 
 # identifiability analysis
-do_ia: true
+do_ia: True
 ia_options:
   method: Laplace # profile_likelihood
 
