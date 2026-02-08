@@ -1431,6 +1431,7 @@
         <variable name="fracR" public_interface="in" units="dimensionless"/>
         <variable name="Rp_loc" public_interface="out" units="Js_per_m6"/>
         <variable name="Rd_loc" public_interface="out" units="Js_per_m6"/>
+        <variable name="R_v" public_interface="out" units="Js_per_m6"/>
         <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
                 <eq/>
@@ -1493,6 +1494,15 @@
                     <minus/>
                     <ci>R</ci>
                     <ci>Rp_loc</ci>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <ci>R_v</ci>
+                <apply>
+                    <divide/>
+                    <cn cellml:units="second">0.01</cn>
+                    <ci>C</ci>
                 </apply>
             </apply>
         </math>
@@ -1584,6 +1594,7 @@
                     <ci>u_ext</ci>
                 </apply>
             </apply>
+            <!--+R_v*(v-v_d);-->
             <apply>
                 <eq/>
                 <apply>
