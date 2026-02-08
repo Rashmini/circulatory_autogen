@@ -99,8 +99,13 @@ class VesselNetwork():
 
         # --- LAZY LOAD ---
         import pandas as pd
+        import networkx as nx
         from copy import copy
         import time
+        import random
+
+        random.seed(42)
+        np.random.seed(42)
         # -----------------
 
         print('Generating Vessel Array...')
@@ -151,6 +156,39 @@ class VesselNetwork():
         # Also remove self-loops (vessel connected to itself)
         np.fill_diagonal(self.C_vessel, 0)
         # ============================================================
+
+        # # ============================================================
+        # # NEW FIX: Remove Closed Loops (Cycles)
+        # # ============================================================
+        # # Docker math differences can create loops (A->B->C->A) that don't exist locally.
+        # # These loops confuse the solver. We must find and break them.
+        
+        # print("Sanitizing Graph Topology (Cycle Removal)...")
+        # # Create a temporary graph to find cycles
+        # G_temp = nx.DiGraph(self.C_vessel)
+        
+        # # Find cycles (this is fast for small loops)
+        # try:
+        #     cycles = list(nx.simple_cycles(G_temp))
+        #     if len(cycles) > 0:
+        #         print(f"  [WARNING] Found {len(cycles)} closed loops (cycles) in the network.")
+        #         print("  -> Breaking cycles to prevent solver stalemate...")
+                
+        #         for cycle in cycles:
+        #             # cycle is a list of nodes, e.g., [A, B, C] meaning A->B->C->A
+        #             if len(cycle) > 1:
+        #                 # Arbitrarily cut the connection between the first two nodes
+        #                 u, v = cycle[0], cycle[1]
+        #                 self.C_vessel[u, v] = 0
+        #                 print(f"     * Cut connection {u} -> {v}")
+                        
+        #         print("  Cycle removal complete.")
+        #     else:
+        #         print("  No cycles found. Topology is clean.")
+                
+        # except Exception as e:
+        #     print(f"  [Error] Cycle detection failed: {e}")
+        # # ============================================================
 
         ### // Initialise Variables // ###
         
@@ -208,12 +246,6 @@ class VesselNetwork():
 
         while N_ITER <= MAX_ITER:
 
-            # --- DEADLOCK BREAKER ---
-            # Sleep for 0.1s to let CPU threads untangle. This fixes the Docker freeze.
-            time.sleep(0.1) 
-            print(f"DEBUG: Starting Iteration {N_ITER}...", flush=True)
-            # ------------------------
-            
             ### // (Re)-Assign and get idxs of in-out, and multi-in/out vessels respectively, and (re)-assign junc_types // ###
 
             n_vessel_in_out_idx = np.array([]).astype(int)
@@ -587,6 +619,9 @@ class VesselNetwork():
 
                                 n_vessel_incompatible_df.loc[len(n_vessel_incompatible_df)] = n_vessel_incompatible_dict
 
+            # Remove duplicates to prevent exponential slowdown
+            n_vessel_incompatible_idx = np.unique(n_vessel_incompatible_idx)
+            
             if len(n_vessel_incompatible_idx) > 0:
                 
                 # print('Vessels:\n', self.vessel_df.loc[n_vessel_incompatible_idx, 'name'], '\nhave incompatible BCs')
