@@ -14,7 +14,7 @@ import h5py
 import tifffile
 from scipy import ndimage
 from scipy.spatial import KDTree
-import pandas as pd76
+import pandas as pd
 import ast
 from ast import literal_eval
 from copy import copy
@@ -26,9 +26,6 @@ import re
 import subprocess
 from glob import glob
 from pathlib import Path
-
-from generate_vessel_array import *
-from generate_param_array import *
 
 ###############################
 ### // Class Definitions // ###
@@ -71,6 +68,30 @@ class VesselNetwork():
         ##################################
         ### // Define main function // ###
         ##################################
+
+        # ============================================================
+        # Sanitize Adjacency Matrix: Remove Bidirectional Connections
+        # ============================================================
+        # This prevents the "Short Circuit" error where two vessels 
+        # are inputs and outputs to each other.
+        
+        # Find all pairs (i, j) where both i->j and j->i exist
+        rows, cols = np.where((self.C_vessel == 1) & (self.C_vessel.T == 1))
+        
+        for r, c in zip(rows, cols):
+            # Only process each pair once (when row < col)
+            if r < c: 
+                print(f"  [WARNING] Found bidirectional loop between Vessel {r} ({self.vessel_names[r]}) "
+                      f"and Vessel {c} ({self.vessel_names[c]}).")
+                print(f"  -> Fixing by removing connection {c} -> {r} (Enforcing {r} -> {c})")
+                
+                # Arbitrarily cut the 'return' path to enforce DAG (Directed Acyclic Graph)
+                # You could add logic here to keep the direction based on Z-height if needed
+                self.C_vessel[c, r] = 0 
+
+        # Also remove self-loops (vessel connected to itself)
+        np.fill_diagonal(self.C_vessel, 0)
+        # ============================================================
 
         ### // Initialise Variables // ###
         
@@ -606,13 +627,18 @@ class VesselNetwork():
         
         inlet_outlet_vessels_df = pd.concat([inlet_vessels_df, outlet_vessels_df], ignore_index=True)
         self.vessel_df = pd.concat([self.vessel_df, inlet_outlet_vessels_df], ignore_index=True)
+        self.vessel_df['BC_type'] = self.vessel_df['BC_type'].astype(str) + '_micro'
+
+        
 
     def generate_parameter_array(self, inp_data_dict=None):
 
         print('Generating Parameter Array...')
 
-        root_dir = os.path.dirname(__file__)
-        root_dir_src = os.path.join(root_dir, 'src')
+        root_dir = os.path.dirname(os.path.abspath(__file__))
+        root_dir = os.path.dirname(root_dir)
+        root_dir = os.path.dirname(root_dir)
+
         sys.path.append(os.path.join(root_dir, 'src'))
 
         user_inputs_dir = os.path.join(root_dir, 'user_run_files')
@@ -625,7 +651,7 @@ class VesselNetwork():
         vessels_csv_abs_path = inp_data_dict['vessels_csv_abs_path']
         parameters_csv_abs_path = inp_data_dict['parameters_csv_abs_path']
 
-        parser = CSV0DModelParser(vessels_csv_abs_path, parameters_csv_abs_path)
+        parser = CSV0DModelParser(inp_data_dict)
 
         vessels_df = pd.read_csv(parser.vessel_filename, header=0, dtype=str)
         vessels_df = vessels_df.fillna('')
@@ -641,7 +667,7 @@ class VesselNetwork():
         self.parameter_df = pd.DataFrame(columns=column_types.keys()).astype(column_types)
 
         # module_config_fold1 = root_dir_src + '/generators/resources/'
-        module_config_fold2 = root_dir + '/module_config_dale/'
+        module_config_fold2 = root_dir + '/module_config_user/'
         modules = []
         # for filename in os.listdir(module_config_fold1):
         #     if filename.endswith(".json"):
@@ -778,7 +804,7 @@ class VesselNetwork():
                                         'data_reference': 'TO_DO'}
                 self.parameter_df = pd.concat([self.parameter_df, pd.DataFrame([new_row])], ignore_index=True)
 
-        parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/test_dale_parameters.csv'
+        parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/image_to_model_parameters.csv'
         self.parameter_df.to_csv(parameters_csv_abs_path_temp, index=False, header=True)
                     
         print('DONE :: Parameters array file for model '+file_prefix+' generated and saved.')
@@ -907,7 +933,7 @@ class VesselNetwork():
             #         return radius, length, stiffness, volume
             #     return np.nan, np.nan, np.nan, np.nan
 
-            CB_geom_params_df = pd.read_csv('/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/label_1_edge_list_for_matrix.csv')
+            CB_geom_params_df = pd.read_csv('label_2_edge_list_for_matrix.csv')
             CB_geom_params_dict = CB_geom_params_df.set_index('Edge_ID_in_Matrix')[['EstimatedRadius', 'WorldLength']].to_dict('index')
             
             def get_vessel_info_row(row, vessel_props_dict, ref_data_dict):
@@ -1062,7 +1088,7 @@ class VesselNetwork():
 
                     P = copy(vessel_param_df.loc[vessel_param_df['vessel_name'] == vessel_name, 'u_0'].iloc[0])
                     vessel_param_df.loc[vessel_param_df['vessel_name'] == vessel_name, 'u_0'] = np.nan
-                    vessel_param_df.loc[vessel_param_df['vessel_name'] == vessel_name, 'P'] = P
+                    vessel_param_df.loc[vessel_param_df['vessel_name'] == vessel_name, 'P'] = str(P)
 
             vessel_param_df['u_ext'] = vessel_param_df['u_ext'].replace('to_fill', 0.)
             vessel_param_df['theta'] = vessel_param_df['u_ext'].replace('to_fill', 0.)
@@ -1134,8 +1160,7 @@ class IlastikClassifier():
         images = list(input_path.glob(input_ext))
         
         if not images:
-            print(f"No images found in {input_dir} matching {input_ext}")
-            return
+            raise FileNotFoundError(f"No images found in {input_dir} matching {input_ext}")
 
         print(f"Found {len(images)} images. Starting Ilastik engine...")
 
@@ -1181,7 +1206,7 @@ def load_segmentation_data(filepath, hdf5_dataset_name=None):
     if not os.path.exists(filepath):
         print(f"Error: File not found at {filepath}")
         return None
-    _, extension = os.path.splitext(filepath.lower())
+    _, extension = os.path.splitext(str(filepath).lower())
     try:
         if extension in ['.h5', '.hdf5']:
             if not hdf5_dataset_name:
@@ -1391,30 +1416,36 @@ def _order_voxel_path(path_voxels_zyx, start_node_pos_zyx):
             
     return ordered_path
 
-##################
-### // Main // ###
-##################
+#############################
+### // Main (Function) // ###
+#############################
 
-def main():
+def run_image_to_model(target_image_path, resources_path, ilastik_path, model_path, input_batch_processing_path, output_batch_processing_path, output_dir, sub_volume, run_ilastik_batch_processing):
 
     ############################
     ### // Ilastik Config // ###
     ############################
 
-    run_ilastik_batch_processing = False
-    
-    ilastik_path = "/home/dsas627/Desktop/ilastik-1.4.1rc2-gpu-Linux/run_ilastik.sh"
-    model_path = "/home/dsas627/Desktop/Ilastik Image Segmentations/C2-Zstack1_Animal2_NG2_dsRed_CD31_647_GLUT_15042025_vessels_processed.ilp"
-    raw_images_folder = "/home/dsas627/Desktop/UCL_confocal/batch_process_input_folder/"
-    output_folder = "/home/dsas627/Desktop/UCL_confocal/batch_process_output_folder/"
+    run_ilastik_batch_processing = run_ilastik_batch_processing
+
+    # ilastik_path = "/home/dsas627/Desktop/ilastik-1.4.1rc2-gpu-Linux/run_ilastik.sh"
+    # model_path = "/home/dsas627/Desktop/Ilastik Image Segmentations/C2-Zstack1_Animal2_NG2_dsRed_CD31_647_GLUT_15042025_vessels_processed.ilp"
+    # input_batch_processing_path = "/home/dsas627/Desktop/UCL_confocal/batch_process_input_folder/"
+    # output_batch_processing_path = "/home/dsas627/Desktop/UCL_confocal/batch_process_output_folder/"
+
+    ilastik_path = ilastik_path
+    model_path = model_path
+    input_batch_processing_path = input_batch_processing_path
+    output_batch_processing_path = output_batch_processing_path
+
 
     #############################
     ### // Image(s) Config // ###
     #############################
 
-    input_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1).h5"
+    input_file_path = target_image_path
     # input_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1)_skeletal_muscle_pc_no_raw_data.h5"
-    labels_to_render_str = "1"
+    labels_to_render_str = "2"
     hdf5_dataset_name_if_applicable = "exported_data"
     # voxel_spacing_str = "1.8660,1.8660,1.8639"
     voxel_spacing_str = "0.6251700,0.6251700,0.9030483"
@@ -1453,7 +1484,7 @@ def main():
     ### // CB Network Generation Config // ###
     ##########################################
 
-    bypass_network_gen_and_just_plot_binary_volume = True
+    bypass_network_gen_and_just_plot_binary_volume = False
 
     ### Median Filter Coefficient: 
     ### Decrease for denser less uniform networks, increase for less dense, more uniform networks
@@ -1467,7 +1498,7 @@ def main():
 
     compute_connectivity_matrix = True
     process_sub_volume = True
-    sub_volume_percentage = 1.0
+    sub_volume_percentage = sub_volume
     sub_volume_center_offset_x_percent = 0.0
     sub_volume_center_offset_y_percent = 0.0
     sub_volume_center_offset_z_percent = 0.0
@@ -1479,10 +1510,10 @@ def main():
     pressure_outlet_value = 666.612
     # New configuration for segment connectivity DataFrame
     generate_segment_connectivity_file = True
-    output_segment_connectivity_filename = "WKY_B_2x2x2_vessel_array.csv"  # Base name
+    output_segment_connectivity_filename = "image_to_model_vessel_xyz.csv"  # Base name
     # New configuration for the vessel parameters DataFrame
     generate_vessel_parameters_file = True
-    output_vessel_parameters_filename = "WKY_B_2x2x2_parameters.csv"
+    output_vessel_parameters_filename = "image_to_model_parameters.csv"
     # --- NEW: Glomus Cell Superimposition ---
     render_with_glomus_cells = False
     glomus_file_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/Segmentation (Label 1)_glomus_cells.h5"  # <-- IMPORTANT: SET THIS FILE PATH
@@ -1501,11 +1532,11 @@ def main():
     generate_tissue_block_face_file = True
     output_tissue_block_face_filename = "tissue_block_faces.csv"
     # --- NEW: Vessels by Tissue Block Calculation ---
-    generate_vessels_by_block_file = True
+    generate_vessels_by_block_file = False
     output_vessels_by_block_filename = "vessels_by_block.csv"
     # --- NEW: Vessel and Volume Element Array ---
     generate_vessel_and_volume_array_file = True
-    output_vessel_and_volume_array_filename = "WKY_B_2x2x2_vessel_and_volume_element_array.csv"
+    output_vessel_and_volume_array_filename = "image_to_model_vessel_and_volume_element_array.csv"
     # --- NEW: Processing for Circulatory Autogen ---
     run_processing_for_circ_autogen = True
 
@@ -1513,8 +1544,8 @@ def main():
     ### // Circulatory Autogen Config // ###
     ########################################
 
-    run_circ_autogen = False
-    
+    run_circ_autogen = True
+
     #################################
     ### // Ilastik Shenanigans // ###
     #################################
@@ -1523,37 +1554,37 @@ def main():
 
         classifier = IlastikClassifier(ilastik_path, model_path)
 
-        classifier.segment_images(input_dir=raw_images_folder,
-                                output_dir=output_folder,
+        classifier.segment_images(input_dir=input_batch_processing_path,
+                                output_dir=output_batch_processing_path,
                                 input_ext="*.tif")
-    
+
     ####################################################
     ### // Process Image Segmentation Shenanigans // ###
     ####################################################
 
     ### ================================================================================================
-    
+
     ### // v DEBUG: Load from batch processing output folder v // ###
 
-    output_folder_path = Path(output_folder)
-    segmentation_files = [str (p) for p in output_folder_path.glob('*.h5')]
+    # output_folder_path = Path(output_batch_processing_path)
+    # segmentation_files = [str (p) for p in output_folder_path.glob('*.h5')]
 
-    segmentation_data = load_segmentation_data(segmentation_files[1], hdf5_dataset_name_if_applicable)
+    # segmentation_data = load_segmentation_data(segmentation_files[1], hdf5_dataset_name_if_applicable)
+    # if segmentation_data is None:
+    #     return
+
+    ### ================================================================================================
+
+    ### ================================================================================================
+
+    ### // v DEBUG: Load from hard-coded input file path // v ###
+
+    segmentation_data = load_segmentation_data(input_file_path, hdf5_dataset_name_if_applicable)
     if segmentation_data is None:
         return
 
     ### ================================================================================================
 
-    ### ================================================================================================
-    
-    ### // v DEBUG: Load from hard-coded input file path // v ###
-    
-    # segmentation_data = load_segmentation_data(input_file_path, hdf5_dataset_name_if_applicable)
-    # if segmentation_data is None:
-    #     return
-    
-    ### ================================================================================================
-    
     # --- INSERT THIS DEBUG BLOCK ---
     print("DEBUG: Unique values in loaded data:", np.unique(segmentation_data))
     # -------------------------------
@@ -1952,8 +1983,8 @@ def main():
                     all_nodes_world_xyz[:, 2] = all_nodes_image_zyx[:, 0] * vedo_spacing[2]
                     for node_idx, img_coords_zyx_centroid in enumerate(all_nodes_image_zyx):
                         G_undirected.add_node(node_idx, pos_zyx_image=tuple(img_coords_zyx_centroid),
-                                              pos_xyz_world=tuple(all_nodes_world_xyz[node_idx]),
-                                              type=node_types_list[node_idx])
+                                                pos_xyz_world=tuple(all_nodes_world_xyz[node_idx]),
+                                                type=node_types_list[node_idx])
                     print(f"        Added {G_undirected.number_of_nodes()} nodes to undirected graph G_undirected.")
 
                     if 'neighbor_map' not in locals() and skeleton_volume is not None:
@@ -1968,7 +1999,7 @@ def main():
                     skel_segments_only = skeleton_volume.copy()
                     skel_segments_only[all_raw_node_vox_mask] = False
                     labeled_segments, num_segments = ndimage.label(skel_segments_only,
-                                                                   structure=np.ones((3, 3, 3), dtype=bool))
+                                                                    structure=np.ones((3, 3, 3), dtype=bool))
                     print(f"        Found {num_segments} potential segments.")
 
                     # --- SEGMENT PROCESSING LOOP FOR GRAPH & FEEDING STATUS ---
@@ -1984,7 +2015,7 @@ def main():
                         vol_shape = labeled_segments.shape
 
                         for seg_id in tqdm(range(1, num_segments + 1), desc="      Segments", unit="segment",
-                                           leave=False):
+                                            leave=False):
                             
                             # 2. Get the tight slice
                             sl = segment_slices[seg_id - 1]
@@ -2076,7 +2107,7 @@ def main():
                         cell_size = grid_dims / np.array(grid_resolution_xyz)
 
                         G_discretized = discretize_network_with_grid(
-                               G_clean_undirected, grid_planes_x, grid_planes_y, grid_planes_z, vedo_spacing)
+                                G_clean_undirected, grid_planes_x, grid_planes_y, grid_planes_z, vedo_spacing)
                     else:
                         G_discretized = G_clean_undirected.copy()
 
@@ -2280,7 +2311,7 @@ def main():
                                 # Handle case where the final matrix is empty
                                 print("           Skipping verification as the matrix is empty.")
                             
-                            np.savetxt(f"label_{label_id}_{output_edge_adjacency_matrix_path}", processed_edge_adj_mtx, delimiter=',', fmt='%d')
+                            np.savetxt(output_dir / f"label_{label_id}_{output_edge_adjacency_matrix_path}", processed_edge_adj_mtx, delimiter=',', fmt='%d')
                             print(f"        Edge adjacency matrix saved.")
                             
                             # All subsequent file generation now uses the correctly filtered `processed_edge_list`
@@ -2337,7 +2368,7 @@ def main():
                                         connectivity_df = pd.DataFrame(list_for_segment_connectivity_df)
                                         connectivity_df['inp_vessels'] = connectivity_df['inp_vessels'].apply(lambda x: ' '.join(map(str, x)))
                                         connectivity_df['out_vessels'] = connectivity_df['out_vessels'].apply(lambda x: ' '.join(map(str, x)))
-                                        connectivity_df.to_csv(f"label_{label_id}_{output_segment_connectivity_filename}", index=False)
+                                        connectivity_df.to_csv(output_dir / f"label_{label_id}_{output_segment_connectivity_filename}", index=False)
                                         print(f"          Segment connectivity data saved.")
         
         except Exception as e_s:
@@ -2366,7 +2397,7 @@ def main():
 
     # --- NEW (ROBUST): Generate Actors by mapping voxel paths to filtered graph nodes ---
     print("\n      Generating new visual actors from filtered network data (Voxel-First Method)...")
-    
+
     filtered_skeleton_actors = []
     filtered_node_actors = {}
     filtered_actors_for_feeding_plot = []
@@ -2381,7 +2412,7 @@ def main():
         # 2. Build a KDTree of the final, connected nodes for fast geometric lookup
         valid_connected_node_ids = [nid for nid in connected_node_ids if nid in G_final_processed.nodes]
         if not valid_connected_node_ids:
-             print("        Warning: No valid nodes found in the filtered list. Cannot generate plot actors.")
+                print("        Warning: No valid nodes found in the filtered list. Cannot generate plot actors.")
         else:
             connected_node_coords = np.array([G_final_processed.nodes[nid]['pos_zyx_image'] for nid in valid_connected_node_ids])
             node_id_list = list(valid_connected_node_ids)
@@ -2534,26 +2565,26 @@ def main():
                     snapped_intersection_actor.name = "Snapped_Intersection_Nodes"
 
     # 6. Assemble the final actor lists for each plot, using the snapped nodes
-    
+
     # Create a list of all node actors EXCEPT the original, floating intersection nodes
     nodes_to_plot = [actor for n_type, actor in filtered_node_actors.items() if n_type != 'intersection']
-    
+
     # Add our new, snapped intersection node actor to the list
     if snapped_intersection_actor is not None:
         nodes_to_plot.append(snapped_intersection_actor)
 
     all_filtered_nodes = nodes_to_plot # This list now contains the snapped nodes
-    
+
     filtered_skeleton_junction_actors = filtered_skeleton_actors + all_filtered_nodes
     filtered_actors_for_combined_plot = surface_only_actors + filtered_skeleton_junction_actors
     filtered_actors_for_feeding_plot += all_filtered_nodes
     # --- END of new actor generation ---
-    
+
     # --- Plotting (using filtered data) ---
     # Note: Surface plots (like Plot 1 and 4) will show the COMPLETE original surface, 
     # as filtering a 3D mesh is non-trivial. The skeleton/nodes overlaid will be filtered.
 
-    plot_pls = True
+    plot_pls = False
     if plot_pls:
 
         if 'filtered_skeleton_junction_actors' in locals():
@@ -2640,10 +2671,10 @@ def main():
     ### // Vessel Network Construction // ###
     #########################################
 
-    C_vessel_filepath = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/label_1_edge_adjacency_matrix.csv'
+    C_vessel_filepath = output_dir / f'label_{label_id}_edge_adjacency_matrix.csv'
     C_vessel = np.genfromtxt(C_vessel_filepath, delimiter=',')
 
-    network_info_filepath = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/label_1_WKY_B_2x2x2_vessel_array.csv'
+    network_info_filepath = output_dir / f'label_{label_id}_image_to_model_vessel_xyz.csv'
     network_info_df = pd.read_csv(network_info_filepath, engine='python')
     vessel_names = np.array(network_info_df['name'])
 
@@ -2657,20 +2688,24 @@ def main():
     vessel_mods = np.array([random.choice(vessel_mod_types) for i in range(len(vessel_names))])
 
     vessel_network = VesselNetwork(C_vessel=C_vessel,
-                                   vessel_names=vessel_names,
-                                   vessel_mods=vessel_mods,
-                                   vessel_centroids=vessel_centroids)
-    
+                                    vessel_names=vessel_names,
+                                    vessel_mods=vessel_mods,
+                                    vessel_centroids=vessel_centroids)
+
     vessel_network.generate_vessel_array()
 
-    vessel_array_csv_filepath = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/test_dale_vessel_array.csv'
-    vessel_network.vessel_df.to_csv(vessel_array_csv_filepath, index=False)
+    vessel_array_csv_filepath_resources = resources_path / 'image_to_model_vessel_array.csv'
+    vessel_array_csv_filepath_user_output = output_dir / 'image_to_model_vessel_array.csv'
+    vessel_network.vessel_df.to_csv(vessel_array_csv_filepath_resources, index=False)
+    vessel_network.vessel_df.to_csv(vessel_array_csv_filepath_user_output, index=False)
 
     vessel_network.generate_parameter_array()
     vessel_network.populate_parameter_array()
 
-    parameters_csv_abs_path_temp = '/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/resources/test_dale_parameters.csv'
-    vessel_network.parameter_df.to_csv(parameters_csv_abs_path_temp, index=False, header=True)
+    parameters_csv_abs_path_temp_resources = resources_path / 'image_to_model_parameters.csv'
+    parameters_csv_abs_path_temp_user_output = output_dir / 'image_to_model_parameters.csv'
+    vessel_network.parameter_df.to_csv(parameters_csv_abs_path_temp_resources, index=False, header=True)
+    vessel_network.parameter_df.to_csv(parameters_csv_abs_path_temp_user_output, index=False, header=True)
 
     #####################################
     ### // Run Circulatory Autogen // ###
@@ -2678,7 +2713,7 @@ def main():
 
     if run_circ_autogen:
 
-        script_path = "/home/dsas627/PycharmProjects/me_bioeng_cb_vessel_network/src/scripts/script_generate_with_new_architecture.py"
+        script_path = "/home/dsas627/PycharmProjects/circulatory_autogen/src/scripts/script_generate_with_new_architecture.py"
         script_dir = os.path.dirname(script_path)
 
         print("Starting script...")
@@ -2686,10 +2721,6 @@ def main():
         # No capture_output=True here. 
         # The output will stream directly to your console.
         subprocess.run(
-            ["python", "-u", script_path],  # -u is important for real-time printing!
+            [sys.executable, "-u", script_path, "False"],  # -u is important for real-time printing!
             cwd=script_dir
         )
-
-if __name__ == "__main__":
-    main()
-
