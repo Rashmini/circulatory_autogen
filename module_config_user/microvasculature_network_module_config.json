@@ -11,8 +11,12 @@
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v", "P"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["P"]
           }
         ],
         "general_ports":[],
@@ -35,8 +39,12 @@
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v", "P"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["P"]
           }
         ],
         "general_ports":[],
@@ -55,15 +63,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"],
+            "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           },
           {
@@ -108,15 +127,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"],
+            "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           },
           {
@@ -161,15 +191,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"],
+            "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           },
           {
@@ -214,15 +255,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"],
+            "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           },
           {
@@ -267,15 +319,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"],
+            "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           },
           {
@@ -320,15 +383,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"],
+            "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           },
           {
@@ -373,15 +447,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"],
+            "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           },
           {
@@ -426,15 +511,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"],
+            "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           },
           {
@@ -479,15 +575,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"],
+            "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           },
           {
@@ -532,15 +639,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"],
+            "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           },
           {
@@ -585,15 +703,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_d","u_out"]
+            "port_type":"flow_port",
+            "variables":["v_d"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -641,15 +767,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           },
           {
             "port_type":"flow_port",
@@ -701,15 +835,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -752,15 +894,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_d","u_out"]
+            "port_type":"flow_port",
+            "variables":["v_d"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -808,15 +958,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_d","u_out"]
+            "port_type":"flow_port",
+            "variables":["v_d"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -864,15 +1022,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_d","u_out"]
+            "port_type":"flow_port",
+            "variables":["v_d"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -906,15 +1072,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_d","u_out"]
+            "port_type":"flow_port",
+            "variables":["v_d"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"length_and_radius_port",
@@ -967,15 +1141,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_d","u_out"]
+            "port_type":"flow_port",
+            "variables":["v_d"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -1009,15 +1191,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_d","u_out"]
+            "port_type":"flow_port",
+            "variables":["v_d"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -1051,15 +1241,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           },
           {
             "port_type":"flow_port",
@@ -1111,15 +1309,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           },
           {
             "port_type":"flow_port",
@@ -1152,15 +1358,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           },
           {
             "port_type":"flow_port",
@@ -1193,15 +1407,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           },
           {
             "port_type":"flow_port",
@@ -1234,15 +1456,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_in"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_in"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           },
           {
             "port_type":"flow_port",
@@ -1275,15 +1505,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -1326,15 +1564,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -1367,15 +1613,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"length_and_radius_port",
@@ -1427,15 +1681,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -1468,15 +1730,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"]
           },
           {
             "port_type":"flow_port",
@@ -1509,15 +1779,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u_d"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_d"]
           },
           {
             "port_type":"flow_port",
@@ -1564,15 +1842,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u_d"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_d"]
           },
           {
             "port_type":"flow_port",
@@ -1609,15 +1895,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u_d"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_d"]
           },
           {
             "port_type":"flow_port",
@@ -1654,15 +1948,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u_d"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_d"]
           },
           {
             "port_type":"flow_port",
@@ -1699,15 +2001,23 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u_d"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_d"]
           },
           {
             "port_type":"flow_port",
@@ -1744,16 +2054,27 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"],
+            "multi_port":"True"
           }
         ],
         "variables_and_units":
@@ -1792,16 +2113,27 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"],
+            "multi_port":"True"
           }
         ],
         "variables_and_units":
@@ -1840,16 +2172,27 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"],
+            "multi_port":"True"
           }
         ],
         "variables_and_units":
@@ -1888,16 +2231,27 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"],
+            "multi_port":"True"
           }
         ],
         "variables_and_units":
@@ -1936,16 +2290,27 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"],
+            "multi_port":"True"
           }
         ],
         "variables_and_units":
@@ -1984,16 +2349,26 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u_d"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_d"],
             "multi_port":"True"
           }
         ],
@@ -2036,16 +2411,25 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out","u_d"]
+            "port_type":"flow_port",
+            "variables":["v_out"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_d"]
           }
         ],
         "variables_and_units":
@@ -2087,15 +2471,24 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in","u"]
+            "port_type":"flow_port",
+            "variables":["v_in"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"]
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_out_sum","u_d"],
+            "port_type":"flow_port",
+            "variables":["v_out_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_d"],
             "multi_port":"True"
           }
         ],
@@ -2138,16 +2531,27 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"],
+            "multi_port":"True"
           }
         ],
         "variables_and_units":
@@ -2186,16 +2590,27 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"],
+            "multi_port":"True"
           }
         ],
         "variables_and_units":
@@ -2234,16 +2649,27 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"],
+            "multi_port":"True"
           }
         ],
         "variables_and_units":
@@ -2282,16 +2708,27 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"],
+            "multi_port":"True"
           }
         ],
         "variables_and_units":
@@ -2330,16 +2767,27 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v_in_sum","u"],
+            "port_type":"flow_port",
+            "variables":["v_in_sum"],
+            "multi_port":"Sum"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u"],
             "multi_port":"True"
           }
         ],
         "exit_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v","u_out"]
+            "port_type":"flow_port",
+            "variables":["v"],
+            "multi_port":"True"
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["u_out"],
+            "multi_port":"True"
           }
         ],
         "variables_and_units":
@@ -2378,8 +2826,12 @@
         "entrance_ports":
         [
           {
-            "port_type":"vessel_port",
-            "variables":["v", "P"]
+            "port_type":"flow_port",
+            "variables":["v"]
+          },
+          {
+            "port_type":"pressure_port",
+            "variables":["P"]
           }
         ],
         "exit_ports":

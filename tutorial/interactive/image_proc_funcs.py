@@ -1200,8 +1200,7 @@ class VesselNetwork():
                 solved_pressures_vec, residuals, rank, s = np.linalg.lstsq(A, b, rcond=None)
                 solved_pressures = {node: solved_pressures_vec[i] for i, node in enumerate(internal_nodes)}
             except np.linalg.LinAlgError:
-                print("Error: The system of equations is singular and cannot be solved.")
-                return None
+                raise np.linalg.LinAlgError("The system of equations is singular and cannot be solved.")
 
             # --- 7. Format and Return the Final DataFrame ---
             all_pressures = boundary_pressures.copy()
@@ -1323,8 +1322,7 @@ class IlastikClassifier():
             
         except subprocess.CalledProcessError as e:
             print("!!! Error occurred during processing !!!")
-            print()
-            print(e.stderr)
+            raise e
 
 ##################################
 ### // Function Definitions // ###
@@ -1334,27 +1332,22 @@ def load_segmentation_data(filepath, hdf5_dataset_name=None):
     import tifffile
 
     if not filepath:
-        print("Error: Input file path is not set.")
-        return None
+        raise ValueError("Input file path is not set.")
     if not os.path.exists(filepath):
-        print(f"Error: File not found at {filepath}")
-        return None
+        raise FileNotFoundError(f"Error: File not found at {filepath}")
     _, extension = os.path.splitext(str(filepath).lower())
     try:
         if extension in ['.h5', '.hdf5']:
             if not hdf5_dataset_name:
-                print("Error: HDF5 dataset name is required.")
-                return None
+                raise ValueError("Error: HDF5 dataset name is required.")
             with h5py.File(filepath, 'r') as f:
                 if hdf5_dataset_name not in f:
-                    print(f"Error: Dataset '{hdf5_dataset_name}' not found.")
-                    return None
+                    raise ValueError(f"Error: Dataset '{hdf5_dataset_name}' not found.")
                 data = np.array(f[hdf5_dataset_name])
         elif extension in ['.tif', '.tiff']:
             data = tifffile.imread(filepath)
         else:
-            print(f"Error: Unsupported file extension '{extension}'.")
-            return None
+            raise ValueError(f"Error: Unsupported file extension '{extension}'.")
 
         if data.ndim == 4 and data.shape[-1] == 1:
             data = np.squeeze(data, axis=-1)
@@ -1365,13 +1358,12 @@ def load_segmentation_data(filepath, hdf5_dataset_name=None):
                 data = data[..., 0]
 
         if data.ndim != 3:
-            print(f"Error: Loaded data is not 3D (shape: {data.shape}).")
-            return None
+            raise ValueError(f"Error: Loaded data is not 3D (shape: {data.shape}).")
         print(f"Successfully loaded data: {data.shape}, {data.dtype}")
         return data
     except Exception as e:
         print(f"Error loading data: {e}")
-        return None
+        raise e
 
 def discretize_network_with_grid(graph, grid_planes_x, grid_planes_y, grid_planes_z, vedo_spacing):
     """
@@ -1558,7 +1550,8 @@ def _order_voxel_path(path_voxels_zyx, start_node_pos_zyx):
 ### // Main (Function) // ###
 #############################
 
-def run_image_to_model(target_image_path, resources_path, ilastik_path, model_path, input_batch_processing_path, output_batch_processing_path, sub_volume, run_ilastik_batch_processing):
+def run_image_to_model(target_image_path, resources_path, ilastik_path, model_path, 
+                       input_batch_processing_path, output_batch_processing_path, sub_volume, run_ilastik_batch_processing):
 
     # --- LAZY LOAD IMPORTS ---
     import pandas as pd
@@ -1803,8 +1796,7 @@ def run_image_to_model(target_image_path, resources_path, ilastik_path, model_pa
 
             print(f"  Sub-volume ZYX voxel start offset from original: ({z_start}, {y_start}, {x_start})")
             if segmentation_data.size == 0:
-                print("Error: Sub-volume cropping resulted in an empty volume. Please check parameters.")
-                return
+                raise ValueError("Sub-volume cropping resulted in an empty volume. Please check parameters.")
 
     try:
         user_spacing_x, user_spacing_y, user_spacing_z = map(float, voxel_spacing_str.split(','))
@@ -1850,8 +1842,7 @@ def run_image_to_model(target_image_path, resources_path, ilastik_path, model_pa
         # ==========================================================
 
     except ValueError:
-        print(f"Error: Invalid spacing format: '{voxel_spacing_str}'.")
-        return
+        raise ValueError(f"Error: Invalid spacing format: '{voxel_spacing_str}'.")
 
     try:
         bg_col = eval(background_color_str) if '(' in background_color_str else background_color_str
