@@ -18,19 +18,13 @@ except Exception:
     ScalarFloat = None
 import re
 
-# [NEW CODE - DISABLES MPI]
-# try:
-#     from mpi4py import MPI
-# except:
-#     mpi_available = False
-#     rank=0
-# else:
-#     mpi_available = True
-#     rank = MPI.COMM_WORLD.Get_rank()
-
-# FORCE DISABLE to prevent Docker hang
-mpi_available = False
-rank = 0
+try:
+    from mpi4py import MPI
+    mpi_available = True
+    rank = MPI.COMM_WORLD.Get_rank()
+except:
+    mpi_available = False
+    rank=0
 
 root_dir = os.path.join(os.path.dirname(__file__), '../..')
 sys.path.append(os.path.join(root_dir, 'src'))
