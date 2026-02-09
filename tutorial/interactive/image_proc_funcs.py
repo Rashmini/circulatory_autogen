@@ -201,7 +201,15 @@ class VesselNetwork():
         # # ============================================================
 
         ### // Initialise Variables // ###
-        
+
+        # TODO FIX THIS!!!
+        # temporarily remove self-loops 
+        # remove any inputs to the first node (index 0)
+        first_node_idx = 0
+        first_node_inp = np.where(self.C_vessel[:, first_node_idx] != 0)[0]
+        if first_node_inp.size > 0:
+            self.C_vessel[first_node_inp, first_node_idx] = 0
+
         n_vessel = self.C_vessel.shape[0]
         n_vessel_idx = np.arange(0, n_vessel)
 
@@ -1115,7 +1123,12 @@ class VesselNetwork():
             
             network_vessels_df[['r_0','l','E','q_C_init']] = pd.DataFrame(geometries, 
                                                                           index=network_vessels_df.index)
-            
+
+
+            # TODO radii are not being set correctly, they are tiny. 
+            # Temporarily increase the radii by a factor of 4
+            network_vessels_df['r_0'] = network_vessels_df['r_0'] * 4
+
             vessel_param_df[['r_0', 'l']] = network_vessels_df[['r_0', 'l']] ### Set the r_0 and l values in the vessel parameter dataframe to be the same as the calculated values in the vessel network dataframe
             vessel_param_df['r'] = network_vessels_df['r_0'] ### Set r in the vessel parameter dataframe to be the same as the calculated radii values from the vessel network dataframe
             vessel_param_df['E'] = network_vessels_df['E'] ### Set E in the vessel parameter dataframe to be the same as the calculated E values from the vessel network dataframe
