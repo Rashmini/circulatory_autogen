@@ -1,16 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <model name="modules" xmlns="http://www.cellml.org/cellml/1.1#" xmlns:cellml="http://www.cellml.org/cellml/1.1#">
-    <component name="constant_pressure_BC_type_dale">
+    <component name="constant_pressure_BC_type_micro">
         <variable name="t" public_interface="in" units="second"/>
         <variable name="v" public_interface="in" units="m3_per_s"/>
         <variable name="P" private_interface="in" public_interface="out" units="J_per_m3"/>
     </component>
-    <component name="constant_flow_BC_type_dale">
+    <component name="constant_flow_BC_type_micro">
         <variable name="t" public_interface="in" units="second"/>
         <variable name="P" public_interface="in" units="J_per_m3"/>
         <variable name="v" private_interface="in" public_interface="out" units="m3_per_s"/>
     </component>
-    <component name="pv_Minlet_type_dale">
+    <component name="pv_Minlet_type_micro">
         <!-- OK-->
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
@@ -223,7 +223,7 @@
         <!--+R_v*(v-v_out_sum);-->
         <!--        u = (u_0+u_C+R_v*(u_in/R-v_out_sum))/(1{dimensionless}+R_v/R);-->
     </component>
-    <component name="pv_Nout_type_dale">
+    <component name="pv_Nout_type_micro">
         <!-- OK-->
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
@@ -436,7 +436,7 @@
         <!--+R_v*(v-v_out_sum);-->
         <!--        u = (u_0+u_C+R_v*(u_in/R-v_out_sum))/(1{dimensionless}+R_v/R);-->
     </component>
-    <component name="pp_type_dale">
+    <component name="pp_type_micro">
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
         <variable name="mu" public_interface="in" units="Js_per_m3"/>
@@ -651,7 +651,7 @@
             </apply>
         </math>
     </component>
-    <component name="pp_capillary_type_dale">
+    <component name="pp_capillary_type_micro">
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
         <variable name="mu" public_interface="in" units="Js_per_m3"/>
@@ -851,7 +851,7 @@
             </apply>
         </math>
     </component>
-    <component name="pv_type_dale">
+    <component name="pv_type_micro">
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
         <variable name="mu" public_interface="in" units="Js_per_m3"/>
@@ -1046,7 +1046,7 @@
         </math>
         <!--+R_v*(v-v_out);-->
     </component>
-    <component name="vp_type_dale">
+    <component name="vp_type_micro">
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
         <variable name="mu" public_interface="in" units="Js_per_m3"/>
@@ -1240,7 +1240,7 @@
         </math>
         <!--+R_v*(v_in-v);-->
     </component>
-    <component name="vp_capillary_type_dale">
+    <component name="vp_capillary_type_micro">
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
         <variable name="mu" public_interface="in" units="Js_per_m3"/>
@@ -1417,7 +1417,7 @@
             </apply>
         </math>
     </component>
-    <component name="vv_type_dale">
+    <component name="vv_type_micro">
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
         <variable name="mu" public_interface="in" units="Js_per_m3"/>
@@ -1661,7 +1661,7 @@
         </math>
         <!--*R_v*(v-v_out);-->
     </component>
-    <component name="vp_Min_type_dale">
+    <component name="vp_Min_type_micro">
         <!-- OK-->
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
@@ -1860,7 +1860,7 @@
         <!--+R_v*(v_in_sum-v);-->
         <!--        u = (u_0+u_C+R_v*(u_out/R+v_in_sum))/(1{dimensionless}+R_v/R);-->
     </component>
-    <component name="vp_Noutlet_type_dale">
+    <component name="vp_Noutlet_type_micro">
         <!-- OK-->
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
@@ -2059,7 +2059,7 @@
         <!--+R_v*(v_in_sum-v);-->
         <!--        u = (u_0+u_C+R_v*(u_out/R+v_in_sum))/(1{dimensionless}+R_v/R);-->
     </component>
-    <component name="vv_MinNout_type_dale">
+    <component name="vv_MinNout_type_micro">
         <!-- OK-->
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
@@ -2310,7 +2310,7 @@
         </math>
         <!-- *R_v*(v-v_out_sum);-->
     </component>
-    <component name="vv_Min_type_dale">
+    <component name="vv_Min_type_micro">
         <!-- OK-->
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
@@ -2561,7 +2561,7 @@
         </math>
         <!-- *R_v*(v-v_out);-->
     </component>
-    <component name="vv_Nout_type_dale">
+    <component name="vv_Nout_type_micro">
         <!-- OK-->
         <variable name="t" public_interface="in" units="second"/>
         <!-- Constitutive parameters-->
