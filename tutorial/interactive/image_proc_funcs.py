@@ -1558,7 +1558,7 @@ def _order_voxel_path(path_voxels_zyx, start_node_pos_zyx):
 ### // Main (Function) // ###
 #############################
 
-def run_image_to_model(target_image_path, resources_path, ilastik_path, model_path, input_batch_processing_path, output_batch_processing_path, output_dir, sub_volume, run_ilastik_batch_processing):
+def run_image_to_model(target_image_path, resources_path, ilastik_path, model_path, input_batch_processing_path, output_batch_processing_path, sub_volume, run_ilastik_batch_processing):
 
     # --- LAZY LOAD IMPORTS ---
     import pandas as pd
@@ -1584,7 +1584,13 @@ def run_image_to_model(target_image_path, resources_path, ilastik_path, model_pa
     model_path = model_path
     input_batch_processing_path = input_batch_processing_path
     output_batch_processing_path = output_batch_processing_path
+    
+    #######################################
+    ### // User Output Folder Config // ###
+    #######################################
 
+    output_dir = Path.cwd() / "resources/user_output"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     #############################
     ### // Image(s) Config // ###
