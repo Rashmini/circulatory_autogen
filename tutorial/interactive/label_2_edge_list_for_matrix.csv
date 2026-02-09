@@ -1,5 +1,0 @@
-Edge_ID_in_Matrix,Source_Node_in_G,Target_Node_in_G,WorldLength,EstimatedRadius,Conductance,FlowRate,PressureDrop,FeedingStatus,GridBlockID
-0,0,7,4.3213,0.7288,2.0079e-17,1.8261e-29,9.0949e-13,N/A,tissue_block_75
-1,0,8,6.0153,1.6979,1.1130e-16,1.8221e-27,1.6371e-11,N/A,tissue_block_75
-2,5,0,3.0847,1.0340,4.8882e-17,1.7339e-27,3.5470e-11,N/A,tissue_block_75
-3,8,9,1.1568,1.8755,1.2001e-15,2.1830e-27,1.8190e-12,N/A,tissue_block_100
