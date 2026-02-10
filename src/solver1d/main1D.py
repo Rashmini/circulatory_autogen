@@ -1400,9 +1400,7 @@ def run1DBFmod(AICstate=[], QICstate=[]):
                             T[j].outputResults(time, T[j].Qsol)
 
             
-            if time>=tEndGlob-tolTime:
-            # if np.abs(time-tEndGlob)<=tolTime:
-            # if time >= tEndGlob:
+            if (time>=tEndGlob-1e-8):
                 print("### 1d solver :: Stop execution! ###")
                 run_one = False
         

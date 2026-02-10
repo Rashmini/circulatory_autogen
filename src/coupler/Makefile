@@ -10,8 +10,8 @@ JSON_PREFIX := $(shell spack location -i nlohmann-json)
 INC_DIR = -I$(JSON_PREFIX)/include
 # LIB_DIR = -L$(JSON_PREFIX)/lib
 
-PIPE_DIR = /home/bghi639/Software/tmp
-# PIPE_DIR = /tmp
+PIPE_DIR = /tmp
+# PIPE_DIR = ./tmp
 
 # # Linker flags
 # LDFLAGS  = $(LIB_DIR)

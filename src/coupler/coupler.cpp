@@ -253,8 +253,9 @@ public:
                 }
             }
 
-        }
+        std::cout << "Coupler :: Initialization completed successfully." << std::endl;
 
+        }
 
         void start_processes() {
             // Start 1D solver main1D.py
@@ -309,6 +310,13 @@ public:
                 // if (use_mpirun) {
                 //     // args_vec.insert(args_vec.end(), { "-ts_type", "bdf", "-ts_bdf_order", "2" }); // BDF2
                 //     args_vec.insert(args_vec.end(), { "-ts_type", "beuler" }); // Backward Euler
+                //     // args_vec.insert(args_vec.end(), { "-ts_type", "cn" }); // Crank-Nicolson
+                // }
+
+                // if (use_mpirun) {
+                //     // args_vec.insert(args_vec.end(), { "-ts_type", "bdf", "-ts_bdf_order", "2" }); // BDF2
+                //     // args_vec.insert(args_vec.end(), { "-ts_max_snes_failures", "-1" }); // Backward Euler
+                //     args_vec.insert(args_vec.end(), { "-snes_rtol", "1e-4" });
                 //     // args_vec.insert(args_vec.end(), { "-ts_type", "cn" }); // Crank-Nicolson
                 // }
 
