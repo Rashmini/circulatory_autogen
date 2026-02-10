@@ -249,9 +249,15 @@ class CVS0DParamID():
         if self.param_id_info is None:
             raise ValueError('Param id info not set')
 
-    def simulate_with_best_param_vals(self, reset=True, only_one_exp=-1):
-        self.param_id.simulate_once(reset=reset, only_one_exp=only_one_exp)
-        self.best_output_calculated = True
+    def simulate_with_best_param_vals(self, reset=True, only_one_exp=-1, return_series=False):
+        if return_series:
+            obs_dicts, obs_arrays = self.param_id.simulate_once(reset=reset, only_one_exp=only_one_exp, return_series=return_series)
+            self.best_output_calculated = True
+            return obs_dicts, obs_arrays
+        else:
+            obs_dict, _ = self.param_id.simulate_once(reset=reset, only_one_exp=only_one_exp)
+            self.best_output_calculated = True
+            return obs_dict
 
     def update_param_range(self, params_to_update_list_of_lists, mins, maxs):
         for params_to_update_list, min, max in zip(params_to_update_list_of_lists, mins, maxs):
@@ -1988,7 +1994,7 @@ class OpencorParamID():
             preds_const_vec[JJ + 2] = np.mean(preds[JJ, :])
         return preds_const_vec
 
-    def simulate_once(self, param_vals=None, reset=True, only_one_exp=-1):
+    def simulate_once(self, param_vals=None, reset=True, only_one_exp=-1, return_series=False):
         """
 
         Setting reset to False and only_one_exp to the experiment number you want to use 
@@ -2027,7 +2033,18 @@ class OpencorParamID():
 
         cost_check, obs = self.get_cost_and_obs_from_params(param_vals=param_vals, 
                                                             reset=reset, only_one_exp=only_one_exp)
-        obs_dicts = [self.get_obs_output_dict(obs_item) for obs_item in obs]
+
+        obs_dicts = []
+        obs_arrays = []
+        for obs_item in obs:                                                    
+            if return_series:
+                obs_dict, obs_array = self.get_obs_output_dict(obs_item, get_all_series=True)
+                obs_dicts.append(obs_dict)
+                obs_arrays.append(obs_array)
+            else:
+                obs_dict = self.get_obs_output_dict(obs_item)
+                obs_dicts.append(obs_dict)
+                obs_arrays.append(None)
 
         if only_one_exp != -1:
             # only print out results if doing all experiments, otherwise cost will be strange
@@ -2042,6 +2059,7 @@ class OpencorParamID():
             print(f'subexperiment {idx+1}:')
             # TODO make the printing of the obs_dict more informative
             print(obs_dict['const'])
+        return obs_dicts, obs_arrays
 
     def set_bayesian_parameters(self, n_calls, n_initial_points, acq_func, random_state, acq_func_kwargs={}):
         if not self.param_id_method == 'bayesian':
