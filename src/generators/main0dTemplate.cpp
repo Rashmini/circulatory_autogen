@@ -166,9 +166,7 @@ int main(int argc, char* argv[]) {
                 }
             }
             
-            if (time>=tEndGlob-tolTime) {
-            // if (std::abs(time-tEndGlob)<=tolTime) {
-            // if (time>=tEndGlob) {
+            if (time>=tEndGlob-1e-8) {
                 std::cout << "### 0d solver :: Stop execution! ###" << std::endl;
                 run_0d = false;
             }
