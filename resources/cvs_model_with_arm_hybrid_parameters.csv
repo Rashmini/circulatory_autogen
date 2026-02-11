@@ -1,6 +1,6 @@
 variable_name,units,value,data_reference
 rho,Js2_per_m5,1050.0,known
-T,second,1.0,defined_by_user
+T,second,0.9,defined_by_user
 q_ra_us,m3,4e-06,Korakianitis_2006_Table_1
 q_rv_us,m3,1e-05,Korakianitis_2006_Table_1
 q_la_us,m3,4e-06,Korakianitis_2006_Table_1
