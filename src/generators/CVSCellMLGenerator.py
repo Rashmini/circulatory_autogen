@@ -115,7 +115,9 @@ class CVS0DCellMLGenerator(object):
             if self.DEBUG:
                 # parse_model seems to print most of the necessary issues, so we don't need to print them here
                 # unless debugging... To check with Hugh
-                libcellml_utils.print_issues(a)
+                # TODO this commented out temporarily
+                # libcellml_utils.print_issues(a)
+                pass
             print(f"analysed model has type {analysed_model.type()} . Is it ODE type? {analysed_model.type()==AnalyserModel.Type.ODE}")
             # print(analysed_model.type())
             # Debug: show how libCellML classifies variables (constant vs variable vs state, etc.)
