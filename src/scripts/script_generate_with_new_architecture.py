@@ -178,18 +178,9 @@ def generate_with_new_architecture(do_generation_with_fit_parameters=False,
 
 
 if __name__ == '__main__':
-    try:
+    if len(sys.argv) > 1:
         do_generation_with_fit_parameters = sys.argv[1] in ['true', 'True']
-        # if len(sys.argv) > 2 and sys.argv[2] not in ["None", "none"]:
-        #     inp_data_dict = sys.argv[2]
-        #     print(inp_data_dict)
-        #     generate_with_new_architecture(do_generation_with_fit_parameters, inp_data_dict=inp_data_dict)
-        # else:
-        #     generate_with_new_architecture(do_generation_with_fit_parameters)
-        generate_with_new_architecture(do_generation_with_fit_parameters)
-
-    except:
-        print(traceback.format_exc())
-        print("Usage with id params: do_generation_with_fit_parameters")
-        print("e.g. script_generate_with_new_architecture.py True")
-        exit()
+    else:
+        do_generation_with_fit_parameters = False
+    
+    generate_with_new_architecture(do_generation_with_fit_parameters)
