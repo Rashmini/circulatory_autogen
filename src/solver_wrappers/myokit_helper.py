@@ -172,9 +172,6 @@ class SimulationHelper:
             # Print the flattened model to string
             model_string = cellml.print_model(flat_model)
 
-            # Apply minimal Myokit-specific fixes to the flattened model
-            model_string = self._apply_myokit_fixes(model_string)
-
             # Create temp file with the flattened model
             with tempfile.NamedTemporaryFile(mode='w+', suffix='.cellml', delete=False) as f:
                 prepared_path = f.name
@@ -185,318 +182,6 @@ class SimulationHelper:
 
         except ImportError:
             raise ImportError("libcellml not available, unable to prepare cellml for myokit")
-
-    def _apply_myokit_fixes(self, model_string):
-        """
-        Apply fixes needed for Myokit compatibility:
-        1. Resolve variable references in initial_value to numeric values by tracing connections# no longer done!
-        2. Replace max functions with simplified expressions
-        """
-        import xml.etree.ElementTree as ET
-
-        # Parse model XML (needed for any structured rewrites, e.g. max->piecewise)
-        # Note: We avoid touching initial_value resolution here; that is handled
-        # post-import in Myokit (see issue #898 strategy).
-        try:
-            model_start = model_string.find('<model')
-            if model_start >= 0:
-                model_content = model_string[model_start:]
-            else:
-                # libcellml print_model should always include <model>, but guard anyway
-                model_content = model_string
-            root = ET.fromstring(model_content)
-        except ET.ParseError as e:
-            # If parsing fails, skip structured rewrites and return original string.
-            print(f"XML parsing failed in _apply_myokit_fixes: {e}. Returning unmodified model string.")
-            return model_string
-
-        # # Build connection map: variable_2 -> [possible variable_1 sources]
-        # # Since multiple components can have the same variable name, we collect all possibilities
-        # connections = {}  # var_2 -> list of (comp1, comp2, var_1)
-
-        # # Find all connection blocks - try different formats
-        # conn_blocks = (root.findall('.//{http://www.cellml.org/cellml/2.0#}connection') or
-        #               root.findall('.//connection') or
-        #               root.findall('.//{http://www.cellml.org/cellml/1.1#}connection'))
-
-        # print(f"DEBUG: Found {len(conn_blocks)} connection blocks")
-
-        # for conn_block in conn_blocks:
-        #     # Get the components being connected - try different formats
-        #     comp1 = conn_block.get('component_1')
-        #     comp2 = conn_block.get('component_2')
-
-        #     if not comp1 or not comp2:
-        #         # Try the old format with map_components
-        #         comp1_elem = (conn_block.find('.//{http://www.cellml.org/cellml/1.1#}map_components') or
-        #                      conn_block.find('.//map_components'))
-        #         if comp1_elem is not None:
-        #             comp1 = comp1_elem.get('component_1')
-        #             comp2 = comp1_elem.get('component_2')
-
-        #     if comp1 and comp2:
-        #         # Find all map_variables in this connection - try different formats
-        #         map_vars = (conn_block.findall('.//{http://www.cellml.org/cellml/2.0#}map_variables') or
-        #                    conn_block.findall('.//{http://www.cellml.org/cellml/1.1#}map_variables') or
-        #                    conn_block.findall('.//map_variables'))
-
-        #         for map_var in map_vars:
-        #             var_1 = map_var.get('variable_1')  # source
-        #             var_2 = map_var.get('variable_2')  # target
-
-        #             if var_1 and var_2:
-        #                 if var_2 not in connections:
-        #                     connections[var_2] = []
-        #                 connections[var_2].append((comp1, comp2, var_1))
-
-        # print(f"DEBUG: Found connections for {len(connections)} variables")
-        # for var_2, sources in list(connections.items())[:3]:
-        #     print(f"DEBUG: {var_2} <- {sources}")
-
-        # # Keep the working connection map (either namespace or non-namespace)
-
-        # # Build component-to-variable mapping and parameter values
-        # component_vars = {}  # component -> list of (var_name, initial_value)
-        # param_values = {}    # var_name -> initial_value (for parameters with numeric values)
-        # computed_values = {} # var_name -> computed initial value
-
-        # # Try with namespace-aware search first
-        # for comp in root.findall('.//{http://www.cellml.org/cellml/2.0#}component'):
-        #     comp_name = comp.get('name')
-        #     if comp_name:
-        #         component_vars[comp_name] = []
-        #         for var in comp.findall('.//{http://www.cellml.org/cellml/2.0#}variable'):
-        #             var_name = var.get('name')
-        #             init_val = var.get('initial_value')
-        #             if var_name:
-        #                 component_vars[comp_name].append((var_name, init_val))
-        #                 if init_val:
-        #                     try:
-        #                         float(init_val)
-        #                         param_values[var_name] = init_val
-        #                     except ValueError:
-        #                         pass
-
-        # # Try to get computed values using libcellml analyser
-        # try:
-        #     import utilities.libcellml_helper_funcs as cellml
-        #     from libcellml import Analyser, Generator, GeneratorProfile
-        #     # parse the model in non-strict mode to allow non CellML 2.0 models
-        #     model = cellml.parse_model(self.cellml_path, False)
-        #     # resolve imports, in non-strict mode
-        #     importer = cellml.resolve_imports(model, os.path.dirname(self.cellml_path), False)
-        #     # need a flattened model for analysing
-        #     flat_model = cellml.flatten_model(model, importer)
-            
-        #     analyser = Analyser()
-        #     analyser.analyseModel(flat_model)
-        #     analysed_model = analyser.model()
-
-        #     if analysed_model:
-        #         # Get all variables from the analysed model with component context
-        #         var_info = []  # List of (var_name, component_name, initial_value)
-        #         for i in range(analysed_model.variableCount()):
-        #             analyser_var = analysed_model.variable(i)
-        #             if analyser_var:
-        #                 # Get the actual variable from the analyser variable
-        #                 real_var = analyser_var.variable()
-        #                 if real_var:
-        #                     var_name = real_var.name()
-
-        #                     component_name = None
-        #                     # Try to get the component this variable belongs to
-        #                     try:
-        #                         parent = real_var.parent()
-        #                         if parent:
-        #                             component_name = parent.name()
-        #                     except:
-        #                         pass
-
-        #                     var_info.append((var_name, component_name))
-
-        #         print(f"DEBUG: Found {len(var_info)} variables with component info")
-        #         for var_name, comp_name, init_val in var_info[:5]:  # Show first 5
-        #             print(f"  {var_name} in {comp_name}: {init_val}")
-
-        #         # Find computed constants (variables with initial values that are computed)
-        #         for var_name, comp_name, init_val in var_info:
-        #             if var_name and init_val:
-        #                 try:
-        #                     # If it's already a number, we already have it
-        #                     float(init_val)
-        #                 except ValueError:
-        #                     # It's a computed value - try to evaluate it
-        #                     # libcellml analyser should have evaluated these
-        #                     computed_val = init_val
-        #                     if computed_val and computed_val != var_name:  # Not a self-reference
-        #                         try:
-        #                             float(computed_val)  # Check if it's now a number
-        #                             computed_values[var_name] = computed_val
-        #                             print(f"Found computed value: {var_name} = {computed_val}")
-        #                         except ValueError:
-        #                             pass
-
-        # except Exception as e:
-        #     print(f"Could not evaluate computed constants: {e}")
-
-        # # Add computed values to param_values
-        # param_values.update(computed_values)
-
-        # print(f"Found {len(connections)} connections and {len(param_values)} parameter values")
-        # if connections:
-        #     print("Sample connections:", dict(list(connections.items())[:3]))
-        # if param_values:
-        #     print("Sample param values:", dict(list(param_values.items())[:3]))
-
-        # # Resolve initial value references by tracing connections
-        # def resolve_variable_reference(var_name, visited=None, component_context=None):
-        #     """Recursively resolve a variable reference to its numeric value"""
-        #     if visited is None:
-        #         visited = set()
-
-        #     if var_name in visited:
-        #         return None  # Circular reference
-
-        #     visited.add(var_name)
-
-        #     # Direct lookup in parameters
-        #     if var_name in param_values:
-        #         return param_values[var_name]
-
-        #     # Check if it's a computed constant from libcellml
-        #     if var_name in computed_values:
-        #         return computed_values[var_name]
-
-        #     # Trace through connections - now connections[var_name] is a list of (comp1, comp2, source_var)
-        #     if var_name in connections:
-        #         sources = connections[var_name]
-        #         print(f"DEBUG: {var_name} has {len(sources)} possible sources: {sources}")
-
-        #         # Try to find a source that matches the component context
-        #         if component_context:
-        #             for comp1, comp2, source_var in sources:
-        #                 if component_context in comp1 or component_context in comp2 or component_context in source_var:
-        #                     # Avoid self-reference
-        #                     if source_var != var_name:
-        #                         print(f"DEBUG: Resolving {var_name} -> {source_var} (from {comp1} to {comp2}) using context {component_context}")
-        #                         return resolve_variable_reference(source_var, visited, component_context)
-
-        #         # If no context match or no context provided, try the first non-self-referencing source
-        #         for comp1, comp2, source_var in sources:
-        #             if source_var != var_name:
-        #                 print(f"DEBUG: Resolving {var_name} -> {source_var} (from {comp1} to {comp2})")
-        #                 return resolve_variable_reference(source_var, visited, component_context)
-
-        #     return None
-
-        # # Create a component-to-variables mapping for context-aware resolution
-        # component_vars = {}
-        # for comp in root.findall('.//component') + root.findall('.//{http://www.cellml.org/cellml/2.0#}component'):
-        #     comp_name = comp.get('name')
-        #     if comp_name:
-        #         component_vars[comp_name] = []
-        #         for var in comp.findall('.//variable') + comp.findall('.//{http://www.cellml.org/cellml/2.0#}variable'):
-        #             component_vars[comp_name].append(var)
-
-        # # Update initial_value attributes that contain variable references with component context
-        # resolved_count = 0
-
-        # def resolve_with_context(var_name, component_name):
-        #     """Resolve a variable reference with component context"""
-        #     return resolve_variable_reference(var_name, component_context=component_name)
-
-        # for comp_name, variables in component_vars.items():
-        #     for var in variables:
-        #         init_val = var.get('initial_value')
-        #         var_name = var.get('name')
-
-        #         if init_val and var_name:
-        #             try:
-        #                 float(init_val)
-        #                 # Already numeric, skip
-        #                 continue
-        #             except ValueError:
-        #                 # It's a variable reference, try to resolve it with component context
-        #                 resolved = resolve_with_context(init_val, comp_name)
-        #                 if resolved:
-        #                     var.set('initial_value', resolved)
-        #                     print(f"Resolved {comp_name}.{var_name}: {init_val} -> {resolved}")
-        #                 else:
-        #                     # Could not resolve - we need to compute the computed constant
-        #                     computed_success = False
-
-        #                     computed_success = self._compute_computed_constant(var_name, comp_name, flat_model, analysed_model, root, param_values, connections, resolve_variable_reference)
-        #                     if computed_success:
-        #                         var.set('initial_value', computed_success)
-        #                         print(f"Computed {comp_name}.{var_name}: {computed_success}")
-        #                     else:
-        #                         print(f"ERROR: Could not compute computed constant {var_name} in {comp_name}")
-        #                         raise ValueError(f"Could not compute computed constant {var_name} in {comp_name}")
-
-        # Apply max function replacements to the XML - replace with piecewise
-        print("Applying max function replacements with piecewise...")
-        max_count = 0
-        mathml_ns = '{http://www.w3.org/1998/Math/MathML}'
-
-        # Find all max applications
-        for apply_elem in root.findall(f'.//{mathml_ns}apply'):
-            max_elem = apply_elem.find(f'{mathml_ns}max')
-            if max_elem is not None:
-                children = list(apply_elem)
-                if len(children) >= 3:  # max, arg1, arg2
-                    # Check if second argument is 0
-                    second_arg = children[2]
-                    if (second_arg.tag.endswith('cn') and
-                        second_arg.text and second_arg.text.strip() == '0'):
-                        # Extract first argument and units
-                        first_arg = children[1]
-                        units = second_arg.get('{http://www.cellml.org/cellml/2.0#}units', 'dimensionless')
-                        
-                        # Create piecewise structure
-                        piecewise = ET.Element(f'{mathml_ns}piecewise')
-                        
-                        # Create piece element
-                        piece = ET.SubElement(piecewise, f'{mathml_ns}piece')
-                        # Copy first argument as the value
-                        piece.append(ET.fromstring(ET.tostring(first_arg, encoding='unicode')))
-                        
-                        # Create condition: first_arg >= 0
-                        condition = ET.SubElement(piece, f'{mathml_ns}apply')
-                        geq = ET.SubElement(condition, f'{mathml_ns}geq')
-                        # Copy first argument again for the condition (left side of >=)
-                        first_arg_copy = ET.fromstring(ET.tostring(first_arg, encoding='unicode'))
-                        condition.append(first_arg_copy)
-                        # Right side: 0
-                        cn_zero = ET.SubElement(condition, f'{mathml_ns}cn')
-                        cn_zero.set('{http://www.cellml.org/cellml/2.0#}units', units)
-                        cn_zero.text = '0'
-                        
-                        # Create otherwise element
-                        otherwise = ET.SubElement(piecewise, f'{mathml_ns}otherwise')
-                        cn_zero_otherwise = ET.SubElement(otherwise, f'{mathml_ns}cn')
-                        cn_zero_otherwise.set('{http://www.cellml.org/cellml/2.0#}units', units)
-                        cn_zero_otherwise.text = '0'
-                        
-                        # Replace the max apply element with piecewise in place
-                        apply_elem.clear()
-                        apply_elem.tag = piecewise.tag
-                        apply_elem.text = piecewise.text
-                        apply_elem.tail = piecewise.tail
-                        # Copy all attributes
-                        for key, value in piecewise.attrib.items():
-                            apply_elem.set(key, value)
-                        # Copy all children
-                        for child in piecewise:
-                            apply_elem.append(child)
-                        
-                        max_count += 1
-
-        print(f"Replaced {max_count} max functions with piecewise")
-
-        # Convert back to string
-        model_string = ET.tostring(root, encoding='unicode', method='xml')
-
-        return model_string
 
     def _setup_time(self, dt, sim_time, pre_time, start_time=0.0):
         self.dt = dt
@@ -670,9 +355,6 @@ class SimulationHelper:
         kind, qname = self._resolve_name(name)
         if self.last_log and kind in ("state", "var"):
             data = np.asarray(self.last_log[qname])
-            if self.pre_steps > 0:
-                # drop pre steps
-                data = data[self.pre_steps:]
             return data
         if kind == "state":
             return np.asarray([self.simulation.state()[self.state_index[qname]]])
@@ -685,20 +367,19 @@ class SimulationHelper:
         name = str(name).strip()
         candidates = [name]
         if "/" in name:
+            # this for cellml naming convention
             parts = name.split("/")
             last = parts[-1]
             first = parts[0]
             candidates.append(last)
-            candidates.append(name.replace("/", "_"))
             candidates.append(f"{first}.{last}")
-            candidates.append(f"{first}_{last}")
+            candidates.append(f"{first}_module.{last}")
         if "." in name:
+            # this for myokit naming convention
             parts = name.split(".")
             last = parts[-1]
             first = parts[0]
             candidates.append(last)
-            candidates.append(f"{first}_{last}")
-            candidates.append(name.replace(".", "_"))
         # try each candidate against qnames
         for cand in candidates:
             if cand in self.qname_to_var:
@@ -712,7 +393,10 @@ class SimulationHelper:
 
         # For parameters, also try with 'parameters.' prefix (common in flattened models)
         if not name.startswith('parameters.'):
-            param_cand = f'parameters.{name}'
+            if name.startswith('global'):
+                param_cand = f'parameters_global.{last}'
+            else:
+                param_cand = f'parameters.{last}_{first}'
             if param_cand in self.qname_to_var:
                 var = self.qname_to_var[param_cand]
                 if var.is_state():
