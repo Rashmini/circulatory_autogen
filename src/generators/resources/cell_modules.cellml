@@ -2298,7 +2298,7 @@
                     <cn cellml:units="millis">2.31</cn>
                     <apply>
                         <divide/>
-                        <cn cellml:units="dimensionless">45</cn>
+                        <cn cellml:units="millis">45</cn>
                         <apply>
                             <plus/>
                             <apply>
