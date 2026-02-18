@@ -44,6 +44,10 @@ class SimulationHelper():
         
         valid_unused_keys=["method", "solver", "dt_solver"]
         for key, value in solver_info.items():
+            if key == 'rtol':
+                key = 'RelativeTolerance'
+            if key == 'atol':
+                key = 'AbsoluteTolerance'
             # ignore high-level/legacy keys that aren't part of OpenCOR solver properties
             if key.lower() in valid_unused_keys:
                 continue

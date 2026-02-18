@@ -360,7 +360,7 @@ def test_init_states_myokit(base_user_inputs, resources_dir):
             "file_prefix": "test_init_states",
             "input_param_file": "test_init_states_parameters.csv",
             "model_type": "cellml_only",
-            "solver": "CVODE",
+            "solver": "CVODE_myokit",
             "pre_time": 0.0,
             "sim_time": 0.1,
             "dt": 0.01,
@@ -377,7 +377,8 @@ def test_init_states_myokit(base_user_inputs, resources_dir):
     dt = 0.01
     sim_time = 0.1
     solver_info = {"MaximumStep": 0.001, "MaximumNumberOfSteps": 5000}
-    helper = get_simulation_helper(model_path=cellml_path, model_type="cellml_only", dt=dt, sim_time=sim_time, solver_info=solver_info, pre_time=0.0, solver="CVODE")
+    helper = get_simulation_helper(model_path=cellml_path, model_type="cellml_only", dt=dt, sim_time=sim_time, 
+                                   solver_info=solver_info, pre_time=0.0, solver="CVODE_myokit")
     result = helper.run()
     assert result, "Myokit simulation failed for init_states_test"
 
