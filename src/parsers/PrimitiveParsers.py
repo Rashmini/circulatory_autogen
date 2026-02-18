@@ -273,7 +273,11 @@ class YamlFileParser(object):
                 inp_data_dict['solver_info']['solver'] = 'PETSC'
                 solver_name = 'PETSC'
 
-        solver_info = inp_data_dict['solver_info']
+        solver_info = get_solver_info_default(inp_data_dict['model_type'])
+        # overwrite with user-provided solver_info
+        for key, value in inp_data_dict['solver_info'].items():
+            solver_info[key] = value
+        
         dt_solver = solver_info.get('dt_solver')
         if dt_solver is None:
             dt_solver = solver_info.get('MaximumStep')
@@ -281,10 +285,8 @@ class YamlFileParser(object):
             solver_info['dt_solver'] = dt_solver
         if solver_info.get('solver', '').startswith('CVODE') and dt_solver is not None:
             solver_info['MaximumStep'] = dt_solver
-        if 'MaximumStep' not in solver_info.keys():
-            solver_info['MaximumStep'] = get_solver_info_default(inp_data_dict['model_type'])['MaximumStep']
-        if 'dt_solver' not in solver_info.keys():
-            solver_info['dt_solver'] = solver_info['MaximumStep']
+
+        inp_data_dict['solver_info'] = solver_info
 
         if 'solver' in inp_data_dict:
             del inp_data_dict['solver']
@@ -504,18 +506,24 @@ def get_solver_info_default(model_type):
         return {
             'solver': 'CVODE',
             'MaximumStep': 0.001,
-            'MaximumNumberOfSteps': 5000
+            'MaximumNumberOfSteps': 5000,
+            'rtol': 1e-8,
+            'atol': 1e-8
         }
     if model_type == 'python':
         return {
             'solver': 'solve_ivp',
             'MaximumStep': 0.001,
-            'MaximumNumberOfSteps': 5000
+            'MaximumNumberOfSteps': 5000,
+            'rtol': 1e-8,
+            'atol': 1e-8
         }
     if model_type == 'cpp':
         return {
             'solver': 'CVODE',
-            'MaximumStep': 0.001
+            'MaximumStep': 0.001,
+            'rtol': 1e-8,
+            'atol': 1e-8
         }
     raise ValueError(f'Invalid model type: {model_type}')
 

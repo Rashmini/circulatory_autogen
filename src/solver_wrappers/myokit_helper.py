@@ -52,8 +52,6 @@ class SimulationHelper:
         self._build_variable_maps()
         self._init_defaults()
 
-        # Set initial values here AND in run() to ensure they stick
-        # self._set_cellml_initial_values()
         self.last_log = None
 
     def get_time(self, include_pre_time=False):
