@@ -1307,6 +1307,9 @@ class OpencorParamID():
         else:
             self.n_steps = None
 
+        if self.protocol_info is not None:
+            self.sim_helper.set_protocol_info(self.protocol_info)
+
         # initialise
         self.param_init = None
         self.best_param_vals = None
@@ -1361,6 +1364,8 @@ class OpencorParamID():
     
     def set_protocol_info(self, protocol_info):
         self.protocol_info = protocol_info
+        # set the protocol_info in the sim_helper so that the protocol traces can be accessed.
+        self.sim_helper.set_protocol_info(self.protocol_info)
 
     def set_prediction_info(self, prediction_info):
         self.prediction_info = prediction_info
@@ -2127,6 +2132,7 @@ class OpencorMCMC(OpencorParamID):
         num_procs = comm.Get_size()
         if rank == 0:
             print('Running mcmc')
+
 
         if num_procs > 1:
             # from pathos import multiprocessing

@@ -28,23 +28,13 @@ class SimulationHelper:
         self.dt = dt
         self.sim_time = sim_time
         self.pre_time = pre_time
+        self.protocol_info = None
+        self.paced_parameter_qname = None
         self.solver_info = solver_info or {}
 
         self.model = self._load_model(self.cellml_path)
         self.processed_cellml_path = getattr(self, '_last_processed_path', None)
-        self.simulation = myokit.Simulation(self.model)
-
-        # apply solver settings
-        if "MaximumStep" in self.solver_info:
-            try:
-                self.simulation.set_max_step_size(self.solver_info["MaximumStep"])
-            except Exception:
-                pass
-        rtol = self.solver_info.get("rtol", None)
-        atol = self.solver_info.get("atol", None)
-        if rtol is not None or atol is not None:
-            self.simulation.set_tolerance(rtol if rtol is not None else 1e-8,
-                                          atol if atol is not None else 1e-8)
+        self._recreate_simulation()
 
         if sim_time is not None and pre_time is not None:
             self._setup_time(dt, sim_time, pre_time)
@@ -60,6 +50,33 @@ class SimulationHelper:
             return self.tSim
         else:
             return self.tSim - self.pre_time
+
+    def set_protocol_info(self, protocol_info):
+        """
+        Store protocol metadata and (if needed) recreate Simulation with pace binding.
+        """
+        self.protocol_info = protocol_info
+        paced_param_name = self._find_paced_parameter_name(protocol_info)
+        if paced_param_name is None:
+            return
+
+        kind, qname = self._resolve_name(paced_param_name)
+        if kind != "var":
+            raise ValueError(
+                f"Pacing parameter {paced_param_name} must resolve to a non-state variable"
+            )
+
+        pace_var = self.model.binding("pace")
+        if pace_var is not None and pace_var.qname() != qname:
+            pace_var.set_binding(None)
+
+        target_var = self.qname_to_var[qname]
+        target_var.set_binding("pace")
+        self.paced_parameter_qname = qname
+
+        # Myokit Simulation clones the model at construction time, so recreate
+        # to ensure the new binding is present in the simulation model.
+        self._recreate_simulation()
 
     def _load_model(self, path):
         """
@@ -191,6 +208,44 @@ class SimulationHelper:
         self.n_steps = int(sim_time / dt)
         self.tSim = np.linspace(start_time + pre_time, self.stop_time, self.n_steps + 1)
 
+    def _recreate_simulation(self):
+        self.simulation = myokit.Simulation(self.model)
+
+        # apply solver settings
+        if "MaximumStep" in self.solver_info:
+            try:
+                self.simulation.set_max_step_size(self.solver_info["MaximumStep"])
+            except Exception:
+                pass
+        rtol = self.solver_info.get("rtol", None)
+        atol = self.solver_info.get("atol", None)
+        if rtol is not None or atol is not None:
+            self.simulation.set_tolerance(
+                rtol if rtol is not None else 1e-8,
+                atol if atol is not None else 1e-8,
+            )
+        self.last_log = None
+        if hasattr(self, "all_vars"):
+            self._init_defaults()
+
+    def _find_paced_parameter_name(self, protocol_info):
+        if not isinstance(protocol_info, dict):
+            return None
+        params_to_change = protocol_info.get("params_to_change", {})
+        if not isinstance(params_to_change, dict):
+            return None
+
+        for param_name, exp_values in params_to_change.items():
+            if not isinstance(exp_values, list):
+                continue
+            for sub_values in exp_values:
+                if not isinstance(sub_values, list):
+                    continue
+                for val in sub_values:
+                    if isinstance(val, str):
+                        return param_name
+        return None
+
     def _build_variable_maps(self):
         # Qualified names for variables
         self.state_vars = self.model.states()
@@ -293,12 +348,44 @@ class SimulationHelper:
                 vals = [vals]
             for name, val in zip(names, vals):
                 kind, qname = self._resolve_name(name)
+
+                
                 if kind == "state":
                     self.simulation.set_state_value(self.state_index[qname], float(val))
                 elif kind == "var":
                     var = self.qname_to_var[qname]
                     # Set RHS to constant value
-                    var.set_rhs(float(val))
+                    if isinstance(val, str):
+                        trace_name = val
+                        if self.paced_parameter_qname is None:
+                            raise ValueError(
+                                "Found string trace name in params_to_change, but no paced "
+                                "parameter was configured in set_protocol_info."
+                            )
+                        if qname != self.paced_parameter_qname:
+                            raise ValueError(
+                                f"Trace name {trace_name} was provided for {qname}, but paced "
+                                f"parameter is {self.paced_parameter_qname}."
+                            )
+                        # Validate protocol info exists  
+                        if 'protocol_traces' not in self.protocol_info.keys():
+                            raise ValueError("params_to_change entry is set to a string, Protocol traces not found in protocol info")
+                        if trace_name not in self.protocol_info['protocol_traces'].keys():  
+                            raise ValueError(f"params_to_change entry is set to a string, {trace_name}, Protocol trace '{trace_name}' not found")   
+                        if 'values' not in self.protocol_info['protocol_traces'][trace_name].keys():
+                            raise ValueError(f"params_to_change entry is set to a string, {trace_name}, Protocol trace '{trace_name}': values not found")
+
+                        pace_time = self.protocol_info['protocol_traces'][trace_name]['t']
+                        pace_values = self.protocol_info['protocol_traces'][trace_name]['values']
+
+                        protocol = myokit.TimeSeriesProtocol(pace_time, pace_values)  
+                        self.simulation.set_protocol(protocol, label='pace') 
+                        
+                    elif not isinstance(val, (float, np.float64, int)):
+                        raise ValueError(f"Parameter value {val} is not a valid type. {type(val)}" + \
+                                         "must be a float, np.float64, or int.")
+                    else:
+                        var.set_rhs(float(val))
                 else:
                     raise ValueError(f"parameter {name} not found")
         # Update cached defaults for future resets

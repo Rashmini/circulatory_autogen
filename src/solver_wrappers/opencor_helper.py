@@ -26,6 +26,7 @@ class SimulationHelper():
 
         self.cellml_path = cellml_path  # path to cellml file
         self.dt = dt  # time step
+        self.protocol_info = None
         if sim_time is not None and pre_time is not None:
             self.stop_time = pre_time + sim_time  # full time of simulation
             self.pre_steps = int(pre_time/dt)  # number of steps to do before storing data (used to reach steady state)
@@ -69,6 +70,10 @@ class SimulationHelper():
             return self.tSim
         else:
             return self.tSim - self.tSim[0]
+
+    def set_protocol_info(self, protocol_info):
+        """Store protocol metadata for a common helper API."""
+        self.protocol_info = protocol_info
 
     def _resolve_name(self, name):
         """
@@ -197,8 +202,15 @@ class SimulationHelper():
         return param_init
 
     def set_param_vals(self, param_names, param_vals):
+            
         # ensure param_vals stores state values first, then constant values
         for JJ, param_name_or_list in enumerate(param_names):
+            if type(param_vals[JJ]) == str:
+                raise NotImplementedError("Setting parameter values by name of protocol trace is not implemented for OpenCOR")
+            elif type(param_vals[JJ]) not in [float, np.float64, int]:
+                raise ValueError(f"Parameter value {param_vals[JJ]} is not a valid type. {type(param_vals[JJ])}" + \
+                                 "must be a float, np.float64, or int.")
+                                 
             if not isinstance(param_name_or_list, list):
                 param_name_or_list = [param_name_or_list]
 

@@ -22,6 +22,7 @@ class SimulationHelper:
         self.dt = dt
         self.pre_time = pre_time
         self.sim_time = sim_time
+        self.protocol_info = None
         self.solver_info = solver_info or {}
         # pull optional SciPy solve_ivp settings; default method RK45
         # Check both 'solver' (new) and 'method' (legacy) for backward compatibility
@@ -41,6 +42,10 @@ class SimulationHelper:
             return self.tSim
         else:
             return self.tSim - self.pre_time
+
+    def set_protocol_info(self, protocol_info):
+        """Store protocol metadata for a common helper API."""
+        self.protocol_info = protocol_info
 
     def set_solve_ivp_method(self, method):
         self.solve_ivp_method = method 
@@ -159,6 +164,11 @@ class SimulationHelper:
             vals = _to_list(vals)
 
             for name, val in zip(name_or_list, vals):
+                if type(val) == str:
+                    raise NotImplementedError("Setting parameter values by name of protocol trace is not implemented for OpenCOR")
+                elif type(val) not in [float, np.float64, int]:
+                    raise ValueError(f"Parameter value {param_vals[JJ]} is not a valid type. {type(param_vals[JJ])}" + \
+                                    "must be a float, np.float64, or int.")
                 kind, idx_res = self._resolve_name(name)
                 if kind == "state":
                     self.states[idx_res] = val
