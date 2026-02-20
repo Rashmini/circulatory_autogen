@@ -243,9 +243,6 @@
         <unit units="litre" />
         <unit exponent="-1" units="mole" />
     </units>
-    <units name="dim">
-        <unit units="dimensionless" />
-    </units>
     <units name="minute">
         <unit multiplier="60.0" units="second" />
     </units>
