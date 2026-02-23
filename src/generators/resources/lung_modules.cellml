@@ -861,6 +861,8 @@
         <variable initial_value="0.0" name="P_err_int" public_interface="out" units="Js_per_m3"/>
         <variable initial_value="0.0" name="P_vent" public_interface="out" units="J_per_m3"/>
         <variable name="alpha_vent" public_interface="in" units="per_s"/>
+        <variable name="v_leak" public_interface="out" units="m3_per_s"/>
+        <variable name="R_leak" public_interface="in" units="Js_per_m6"/>
         <!-- reverse engineered controller for the ventilator.-->
         <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
@@ -939,6 +941,23 @@
             </apply>
             <apply>
                 <eq/>
+                <ci>v_leak</ci>
+                <apply>
+                    <times/>
+                    <ci>R_leak</ci>
+                    <apply>
+                        <power/>
+                        <apply>
+                            <max/>
+                            <ci>P_m</ci>
+                            <cn cellml:units="J_per_m3">0.0</cn>
+                        </apply>
+                        <cn cellml:units="dimensionless">2</cn>
+                    </apply>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
                 <apply>
                     <diff/>
                     <bvar>
@@ -950,8 +969,12 @@
                     <divide/>
                     <apply>
                         <minus/>
-                        <ci>v_vm</ci>
-                        <ci>v_mt</ci>
+                        <apply>
+                            <minus/>
+                            <ci>v_vm</ci>
+                            <ci>v_mt</ci>
+                        </apply>
+                        <ci>v_leak</ci>
                     </apply>
                     <ci>C_m</ci>
                 </apply>
