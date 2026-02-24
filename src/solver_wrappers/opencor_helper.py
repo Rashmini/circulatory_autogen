@@ -168,7 +168,8 @@ class SimulationHelper():
                 elif variable_name in self.simulation.results().algebraic():
                     results[JJ].append(self.simulation.results().algebraic()[variable_name].values()[-self.n_steps-1:].copy())
                 elif variable_name in self.data.constants():
-                    results[JJ].append(self.data.constants()[variable_name])
+                    const_val = self.data.constants()[variable_name]
+                    results[JJ].append(np.ones_like(self.tSim) * const_val)
                 else:
                     print(f'variable {variable_name} is not a model variable. model variables are')
                     print([name for name in self.simulation.results().states()])

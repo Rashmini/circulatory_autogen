@@ -278,8 +278,18 @@ class SimulationHelper:
                 # Note: pre-simulation may change state, but for pre_time=0, this doesn't run
 
             log = self._make_log()
-            self.last_log = self.simulation.run(self.sim_time, log=log,
-                                                log_interval=self.dt)
+            # Use explicit log times so the end-point is included.
+            start_time = self.simulation.time()
+            eps = 1e-12 # run for eps after the end time to make sure the final requested log point is emitted.
+            self.last_log = self.simulation.run(
+                self.sim_time+eps,
+                log=log,
+                log_times=self.tSim-self.pre_time,
+            )
+            # Restore exact endpoint (without epsilon overshoot) for continued runs.
+            end_state = [float(np.asarray(self.last_log[qname])[-1]) for qname in self.state_qnames]
+            self.simulation.set_state(end_state)
+            self.simulation.set_time(start_time + self.sim_time)
         except Exception as e:
             print(f"Myokit simulation failed: {e}")
             return False
@@ -319,6 +329,11 @@ class SimulationHelper:
         if flatten:
             results = [item for sublist in results for item in sublist]
         return results
+    
+    def get_all_results_dict(self):
+        if self.last_log is None:
+            raise RuntimeError("Simulation has not been run yet.")
+        return {qname: np.asarray(self.last_log[qname]) for qname in self.last_log.keys()}
 
     def get_init_param_vals(self, param_names):
         param_init = []
@@ -385,7 +400,7 @@ class SimulationHelper:
                         raise ValueError(f"Parameter value {val} is not a valid type. {type(val)}" + \
                                          "must be a float, np.float64, or int.")
                     else:
-                        var.set_rhs(float(val))
+                        self.simulation.set_constant(qname, float(val))
                 else:
                     raise ValueError(f"parameter {name} not found")
         # Update cached defaults for future resets
