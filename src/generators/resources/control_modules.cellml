@@ -2027,8 +2027,8 @@
         <variable initial_value="0.0" name="Delta_RR_c" public_interface="out" units="Hz"/>
         <variable initial_value="0.0" name="Delta_RR_p" public_interface="out" units="Hz"/>
         <variable name="Delta_RR_resp" public_interface="out" units="per_s"/>
-        <variable initial_value="0.0" name="alpha_P_mus_c" public_interface="out" units="J_per_m3"/>
-        <variable initial_value="0.0" name="alpha_P_mus_p" public_interface="out" units="J_per_m3"/>
+        <variable initial_value="1.0" name="alpha_P_mus_c" public_interface="out" units="J_per_m3"/>
+        <variable initial_value="1.0" name="alpha_P_mus_p" public_interface="out" units="J_per_m3"/>
         <variable name="alpha_P_mus" public_interface="out" units="J_per_m3"/>
         <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
@@ -2098,6 +2098,7 @@
                         <plus/>
                         <apply>
                             <minus/>
+                            <cn cellml:units="J_per_m3">1</cn>
                             <ci>alpha_P_mus_c</ci>
                         </apply>
                         <apply>
@@ -2124,6 +2125,7 @@
                         <plus/>
                         <apply>
                             <minus/>
+                            <cn cellml:units="J_per_m3">1</cn>
                             <ci>alpha_P_mus_p</ci>
                         </apply>
                         <apply>
@@ -2166,7 +2168,7 @@
                     <apply>
                         <max/>
                         <apply>
-                            <plus/>
+                            <times/>
                             <ci>alpha_P_mus_c</ci>
                             <ci>alpha_P_mus_p</ci>
                         </apply>

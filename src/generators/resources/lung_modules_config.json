@@ -212,6 +212,7 @@
           ["R_tot", "Js_per_m6", "access", "constant"],
           ["R_plwall", "Js_per_m6", "access", "constant"],
           ["R_leak", "Js_per_m6", "access", "constant"],
+          ["P_leak_threshold", "J_per_m3", "access", "constant"],
           ["alpha_LR", "dimensionless", "access", "variable"],
           ["C_t", "m6_per_J", "access", "constant"],
           ["C_b", "m6_per_J", "access", "variable"],

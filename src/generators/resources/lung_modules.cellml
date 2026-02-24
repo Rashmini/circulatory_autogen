@@ -863,6 +863,7 @@
         <variable name="alpha_vent" public_interface="in" units="per_s"/>
         <variable name="v_leak" public_interface="out" units="m3_per_s"/>
         <variable name="R_leak" public_interface="in" units="Js_per_m6"/>
+        <variable name="P_leak_threshold" public_interface="in" units="J_per_m3"/>
         <!-- reverse engineered controller for the ventilator.-->
         <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
@@ -943,17 +944,21 @@
                 <eq/>
                 <ci>v_leak</ci>
                 <apply>
-                    <times/>
-                    <ci>R_leak</ci>
+                    <divide/>
                     <apply>
                         <power/>
                         <apply>
                             <max/>
-                            <ci>P_m</ci>
+                            <apply>
+                                <minus/>
+                                <ci>P_m</ci>
+                                <ci>P_leak_threshold</ci>
+                            </apply>
                             <cn cellml:units="J_per_m3">0.0</cn>
                         </apply>
                         <cn cellml:units="dimensionless">2</cn>
                     </apply>
+                    <ci>R_leak</ci>
                 </apply>
             </apply>
             <apply>
