@@ -124,7 +124,8 @@
           },
           {
             "port_type":"thoracic_pressure_port",
-            "variables":["P_pl"]
+            "variables":["P_pl"],
+            "multi_port": "True"
           },
           {
             "port_type":"s_gating",
@@ -255,7 +256,8 @@
         [
           {
             "port_type":"external_pressure_port",
-            "variables":["P_thor"]
+            "variables":["P_thor"],
+            "multi_port": "True"
           }
         ],
         "general_ports":[],
