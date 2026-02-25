@@ -359,7 +359,7 @@
         "general_ports":[],
         "variables_and_units":
         [
-          ["G_pA", "Js_per_m3", "access", "constant"],
+          ["G_pA", "second", "access", "constant"],
           ["G_pf", "dimensionless", "access", "constant"],
           ["tau_pA_min", "second", "access", "constant"],
           ["tau_pA_max", "second", "access", "constant"],
@@ -367,7 +367,7 @@
           ["tau_pf_min", "second", "access", "constant"],
           ["tau_pf_max", "second", "access", "constant"],
           ["tau_pf", "second", "access", "variable"],
-          ["G_cA_max", "Js_per_m3", "access", "constant"],
+          ["G_cA_max", "second", "access", "constant"],
           ["G_cA", "Js_per_m3", "access", "variable"],
           ["G_cf_max", "dimensionless", "access", "constant"],
           ["G_cf", "dimensionless", "access", "variable"],

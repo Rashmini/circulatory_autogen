@@ -940,23 +940,20 @@
                     <ci>R_tube</ci>
                 </apply>
             </apply>
+            <!-- TODO should the below be squared?-->
             <apply>
                 <eq/>
                 <ci>v_leak</ci>
                 <apply>
                     <divide/>
                     <apply>
-                        <power/>
+                        <max/>
                         <apply>
-                            <max/>
-                            <apply>
-                                <minus/>
-                                <ci>P_m</ci>
-                                <ci>P_leak_threshold</ci>
-                            </apply>
-                            <cn cellml:units="J_per_m3">0.0</cn>
+                            <minus/>
+                            <ci>P_m</ci>
+                            <ci>P_leak_threshold</ci>
                         </apply>
-                        <cn cellml:units="dimensionless">2</cn>
+                        <cn cellml:units="J_per_m3">0.0</cn>
                     </apply>
                     <ci>R_leak</ci>
                 </apply>
@@ -2466,6 +2463,7 @@ endsel;-->
  TODO fix this-->
     </component>
     <component name="thoracic_cavity">
+        <variable name="t" public_interface="in" units="second"/>
         <variable name="P_pl" public_interface="in" units="J_per_m3"/>
         <variable name="P_thor" public_interface="out" units="J_per_m3"/>
         <math xmlns="http://www.w3.org/1998/Math/MathML">
