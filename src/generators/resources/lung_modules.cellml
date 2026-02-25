@@ -2465,4 +2465,15 @@ endsel;-->
         <!-- q_b+C_b*(P_plEE+(P_mus_min-P_plEE)/4{dimensionless});
  TODO fix this-->
     </component>
+    <component name="thoracic_cavity">
+        <variable name="P_pl" public_interface="in" units="J_per_m3"/>
+        <variable name="P_thor" public_interface="out" units="J_per_m3"/>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+                <eq/>
+                <ci>P_thor</ci>
+                <ci>P_pl</ci>
+            </apply>
+        </math>
+    </component>
 </model>
