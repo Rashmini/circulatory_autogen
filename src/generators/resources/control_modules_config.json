@@ -266,7 +266,7 @@
         "BC_type":"nn",
         "module_format":"cellml",
         "module_file":"control_modules.cellml",
-        "module_type":"efferent_resistance_effector_type",
+        "module_type":"efferent_resistance_effector_Ursino_type",
         "entrance_ports":
         [
           {
