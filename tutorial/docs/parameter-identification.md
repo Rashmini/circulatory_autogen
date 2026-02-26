@@ -147,6 +147,7 @@ To run the parameter identification we need to set a few entries in the `[CA_dir
     - **genetic_algorithm**: Genetic algorithm optimizer (default, well-tested)
     - **CMA-ES**: Covariance Matrix Adaptation Evolution Strategy using Nevergrad (supports parallel execution)
     - **bayesian**: Bayesian optimization using scikit-optimize (deprecated, untested)
+    - **sp_minimize**: Gradient-based optimizer
 - **pre_time**: this is the amount of time the simulation is run to get to steady state before comparing to the observables from `obs_data.json`. IMPORTANT: THis is overwritten by the pre_times within the obs_data.json file, see the next section.
 - **sim_time**: The amount of time used to compare simulation output and observable data. This should be equal to the length of a series observable entry divided by the "sample_rate". If not, only up to the minimum length of observable data and modelled data will be compared. 
 - **maximum_step**: The maximum time step for the CVODE solver
@@ -165,11 +166,16 @@ To run the parameter identification we need to set a few entries in the `[CA_dir
     - **max_patience**: Maximum patience for convergence (default: 10)
     - **cost_type**: Cost function type (e.g., 'MSE')
   
-  CMA-ES specific options:
+    CMA-ES specific options:
+
     - **sigma0**: Initial standard deviation for CMA-ES (optional, default: 0.2 of parameter range)
     - Note: 
-      - The number of parallel workers is automatically determined from the number of MPI processes
-      - Initial parameter values are automatically loaded from `{file_prefix}_parameters.csv`
+        - The number of parallel workers is automatically determined from the number of MPI processes
+        - Initial parameter values are automatically loaded from `{file_prefix}_parameters.csv`
+    
+    sp_minimize specific options:
+
+    - **automatic_differentiation**: Boolean value to determine whether to use automatic differentiation for gradient calculation. If it's set to *False*, gradients will be estimated using finite difference approximation.
 
 - **ga_options**: Legacy dictionary for optimization options. For backwards compatibility, entries in `ga_options` are automatically merged into `optimiser_options` if not already present. It is recommended to use `optimiser_options` instead.
 
@@ -195,6 +201,11 @@ optimiser_options:
   sigma0: 0.1                      # CMA-ES specific (optional, initial standard deviation)
   # Note: Initial parameter values are automatically loaded from {file_prefix}_parameters.csv
 ```
+
+### Gradient-based Optimizer (sp_minimize)
+- **Pros**: Efficient gradient-based optimization, fast convergence
+- **Cons**: Can get stuck in local minima
+- **Best for**: Smooth optimization landscapes, when you want faster convergence
 
 Note: For backwards compatibility, `ga_options` can still be used and will be automatically merged into `optimiser_options`.
 
