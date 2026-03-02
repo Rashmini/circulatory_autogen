@@ -1668,10 +1668,6 @@ class OpencorParamID():
         # calculate error between the observables of this set of parameters
         # and the ground truth
         
-        # TODO Delete this print
-        print('obs_dict')
-        print(obs_dict)
-
         cost = self.cost_calc(obs_dict, exp_idx=exp_idx, sub_idx=sub_idx)
 
         return cost

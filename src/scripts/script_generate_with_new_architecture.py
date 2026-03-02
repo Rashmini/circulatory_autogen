@@ -9,6 +9,7 @@ import os
 import re
 import traceback
 import yaml
+import numpy as np
 root_dir = os.path.join(os.path.dirname(__file__), '../..')
 sys.path.append(os.path.join(root_dir, 'src'))
 
@@ -19,6 +20,34 @@ from generators.CVSCellMLGenerator import CVS0DCellMLGenerator
 from generators.CVSCppGenerator import CVS0DCppGenerator, CVS1DPythonGenerator
 from generators.PythonGenerator import PythonGenerator
 from parsers.PrimitiveParsers import YamlFileParser
+from utilities.utility_funcs import change_parameter_values_and_save
+
+try:
+    import libcellml as lc
+    LIBCELLML_AVAILABLE = True
+except ImportError:
+    LIBCELLML_AVAILABLE = False
+
+
+def _is_cellml2_model_with_libcellml(model_path):
+    """Return True when strict libCellML parsing/validation succeeds."""
+    if not LIBCELLML_AVAILABLE:
+        return False
+
+    try:
+        with open(model_path, "r", encoding="utf-8") as rf:
+            model_text = rf.read()
+
+        parser = lc.Parser(True)
+        model = parser.parseModel(model_text)
+        if model is None or parser.issueCount() > 0:
+            return False
+
+        validator = lc.Validator()
+        validator.validateModel(model)
+        return validator.issueCount() == 0
+    except Exception:
+        return False
 
 
 def generate_with_new_architecture(do_generation_with_fit_parameters=False,
@@ -45,6 +74,27 @@ def generate_with_new_architecture(do_generation_with_fit_parameters=False,
 
     if do_generation_with_fit_parameters:
         param_id_output_dir_abs_path = inp_data_dict['param_id_output_dir_abs_path']
+        # check if uncalibrated model is cellml2.0
+        if inp_data_dict['model_type'] == 'cellml_only':
+            uncalibrated_model_path = inp_data_dict['uncalibrated_model_path']
+            if _is_cellml2_model_with_libcellml(uncalibrated_model_path):
+                best_param_vals_path = os.path.join(param_id_output_dir_abs_path, 'best_param_vals.npy')
+                param_names_path = os.path.join(param_id_output_dir_abs_path, 'param_names.csv')
+                best_param_vals = np.load(best_param_vals_path)
+                param_names = np.loadtxt(param_names_path, dtype=str)
+
+                calibrated_cellml_path = os.path.join(
+                    generated_models_subdir, f'{file_prefix}.cellml'
+                )
+                change_parameter_values_and_save(
+                    uncalibrated_model_path,
+                    param_names,
+                    best_param_vals,
+                    calibrated_cellml_path
+                )
+                inp_data_dict['model_path'] = calibrated_cellml_path
+            return
+        
         parser = CSV0DModelParser(inp_data_dict, parameter_id_dir=param_id_output_dir_abs_path)
     else:
         parser = CSV0DModelParser(inp_data_dict)
