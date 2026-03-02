@@ -1483,6 +1483,12 @@ class OpencorParamID():
             print('best fit params : {}'.format(self.best_param_vals))
             print('best cost       : {}'.format(self.best_cost))
 
+            # running with best_param and saving outputs
+            for exp_idx in range(self.protocol_info["num_experiments"]):
+                self.simulate_once(self.best_param_vals, reset=False, only_one_exp=exp_idx)
+                all_outputs_dict = self.sim_helper.get_all_results_dict()
+                # save as npz
+                np.savez(os.path.join(self.output_dir, f'all_outputs_with_best_param_vals_exp_{exp_idx}.npz'), **all_outputs_dict)
         return
     
     def get_cost_obs_and_pred_from_params(self, param_vals, reset=True, 
@@ -1662,6 +1668,10 @@ class OpencorParamID():
         # calculate error between the observables of this set of parameters
         # and the ground truth
         
+        # TODO Delete this print
+        print('obs_dict')
+        print(obs_dict)
+
         cost = self.cost_calc(obs_dict, exp_idx=exp_idx, sub_idx=sub_idx)
 
         return cost
@@ -2038,6 +2048,7 @@ class OpencorParamID():
 
         cost_check, obs = self.get_cost_and_obs_from_params(param_vals=param_vals, 
                                                             reset=reset, only_one_exp=only_one_exp)
+
 
         obs_dicts = []
         obs_arrays = []
