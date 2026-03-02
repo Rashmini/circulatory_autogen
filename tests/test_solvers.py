@@ -1,7 +1,7 @@
 """
 Tests for different solver implementations.
 
-These tests verify that OpenCOR (CVODE), Myokit (CVODE_myokit), and Python BDFsolvers
+These tests verify that OpenCOR (CVODE_opencor), Myokit (CVODE_myokit), and Python BDFsolvers
 work correctly for various models.
 
 """
@@ -408,17 +408,17 @@ def temp_model_dir():
     ("SN_simple", "generated_models/SN_simple/SN_simple.cellml"),
 ])
 @pytest.mark.parametrize("solver,solver_info", [
-    ("CVODE", {"MaximumStep": 0.0001}),  # OpenCOR 
+    ("CVODE_opencor", {"MaximumStep": 0.0001}),  # OpenCOR
     ("CVODE_myokit", {"MaximumStep": 0.0001}),  # Myokit
 ])
 def test_cellml_solvers(model_name, model_path, solver, solver_info):
     """
-    Test CellML solvers (OpenCOR CVODE and Myokit CVODE).
+    Test CellML solvers (OpenCOR CVODE_opencor and Myokit CVODE).
     
     Args:
         model_name: Name of the model for test identification
         model_path: Path to the CellML model file
-        solver: Solver name ('CVODE' for OpenCOR, 'CVODE_myokit' for Myokit)
+        solver: Solver name ('CVODE_opencor' for OpenCOR, 'CVODE_myokit' for Myokit)
         solver_info: Solver configuration dictionary
     """
     # Skip OpenCOR tests if OpenCOR is not available
@@ -556,7 +556,7 @@ def _run_all_solvers_and_compare(model_name, model_path, temp_model_dir, dt=0.01
     helpers = {}
     results = {}
     
-    for model_type, solver, method in [("cellml_only", "CVODE", "CVODE"), ("python", "solve_ivp", "BDF"), ("cellml_only", "CVODE_myokit", "CVODE")]:
+    for model_type, solver, method in [("cellml_only", "CVODE_opencor", "CVODE"), ("python", "solve_ivp", "BDF"), ("cellml_only", "CVODE_myokit", "CVODE")]:
         solver_info['method'] = method
         if model_type == "python":
             # Generate Python model from CellML
@@ -651,7 +651,7 @@ def test_all_solvers(model_name, model_path, sim_time, temp_model_dir):
     
     This test verifies that:
     1. Myokit CVODE solver works
-    2. OpenCOR CVODE solver works (if available)
+    2. OpenCOR CVODE_opencor solver works (if available)
     3. Python BDF solver works (after generating Python model)
     4. Initial states are correctly defined in Myokit modified model
     5. Results agree within 0.01% relative error
@@ -667,12 +667,13 @@ def test_all_solvers(model_name, model_path, sim_time, temp_model_dir):
     )
     
     # Check initial states for 3compartment model
-    if model_name == "3compartment" and "Myokit CVODE" in helpers and "OpenCOR CVODE" in helpers:
-        mismatches = _check_initial_states(
-            helpers["Myokit CVODE"],
-            helpers["OpenCOR CVODE"],
+    if model_name == "3compartment" and "CVODE_myokit" in helpers and "CVODE_opencor" in helpers:
+        results = _check_initial_states(
+            helpers["CVODE_myokit"],
+            helpers["CVODE_opencor"],
             model_name
         )
+        mismatches = results['mismatches']
 
         # Fail the test if there are significant initial state mismatches
         significant_mismatches = [m for m in mismatches if m[4] > 0.01]  # 0.01% tolerance

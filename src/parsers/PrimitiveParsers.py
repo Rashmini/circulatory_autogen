@@ -225,7 +225,7 @@ class YamlFileParser(object):
             inp_data_dict['sim_time'] = None
 
         # Parse and validate the solver parameter
-        # Supported solvers: CVODE (OpenCOR), CVODE_myokit (Myokit), or solve_ivp methods (RK45, RK4, etc.)
+        # Supported solvers: CVODE_opencor (OpenCOR), CVODE_myokit (Myokit), or solve_ivp 
         
         valid_cellml_solvers = ['CVODE_opencor', 'CVODE_myokit']
         valid_cellml_methods = ['CVODE']
@@ -239,12 +239,13 @@ class YamlFileParser(object):
         if solver_name is None:
             solver_name = inp_data_dict.get('solver')
         
+        # Backward compatibility: 
         if solver_name == 'CVODE':
             solver_name = 'CVODE_myokit' # default to CVODE_myokit for cellml models
 
         if solver_name is None:
             if inp_data_dict.get('model_type') == 'cellml_only':
-                solver_name = 'CVODE'
+                solver_name = 'CVODE_opencor'
             elif inp_data_dict.get('model_type') == 'python':
                 solver_name = 'solve_ivp'
             elif inp_data_dict.get('model_type') == 'cpp':
@@ -349,16 +350,20 @@ class YamlFileParser(object):
         if solver_method in valid_solve_ivp_methods:
             if inp_data_dict.get('model_type') not in ['python', None]:
                 print(f'solve_ivp method {solver_method} requires model_type to be "python"')
-                print('Use CVODE or CVODE_myokit for CellML models')
+                print('Use CVODE_opencor (or legacy CVODE) or CVODE_myokit for CellML models')
                 print('Use CVODE or RK4 or PETSC for Cpp models')
                 exit()
 
-        if solver_method in valid_cpp_solvers and solver_method not in valid_cellml_solvers:
-            if inp_data_dict.get('model_type') != 'cpp':
-                print(f'Cpp solver {solver_method} can only be used with Cpp models (model_type="cpp")')
-                print('Use CVODE or CVODE_myokit for CellML models')
-                print('Use a solve_ivp method (RK45, RK4, etc.) for Python models')
-                exit()
+        if solver_name in valid_cellml_solvers and solver_method not in valid_cellml_methods:
+            print(f'solver method {solver_method} not compatible with solver {solver_name}, use {valid_cellml_methods} for CellML models')
+            exit()
+        
+        if solver_name in valid_cpp_solvers and solver_method not in valid_cpp_methods:
+            print(f'solver method {solver_method} not compatible with solver {solver_name}, use {valid_cpp_methods} for Cpp models')
+            exit()
+        if solver_name in valid_python_solvers and solver_method not in valid_solve_ivp_methods:
+            print(f'solver method {solver_method} not compatible with solver {solver_name}, use {valid_solve_ivp_methods} for Python models')
+            exit()
 
         if 'DEBUG' in inp_data_dict.keys(): 
             if inp_data_dict['DEBUG']:
@@ -509,7 +514,7 @@ class YamlFileParser(object):
 def get_solver_info_default(model_type):
     if model_type == 'cellml_only':
         return {
-            'solver': 'CVODE',
+            'solver': 'CVODE_opencor',
             'MaximumStep': 0.001,
             'MaximumNumberOfSteps': 5000,
             'rtol': 1e-8,

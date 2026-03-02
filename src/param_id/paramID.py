@@ -92,7 +92,7 @@ class CVS0DParamID():
 
         self.mcmc_options = mcmc_options
         if solver_info is None:
-            self.solver_info = {"solver": "CVODE"} 
+            self.solver_info = {"solver": "CVODE_myokit"}
         else:
             self.solver_info = solver_info
         self.dt = dt

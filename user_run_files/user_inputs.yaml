@@ -66,8 +66,7 @@ solver_info:
 # param_id_obs_path needs to be an absolute path.
 # This for 3compartment
 # param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/3compartment_obs_data.json
-param_id_obs_path: 
-  # /home/farg967/Documents/git_projects/circulatory_autogen/resources/3compartment_obs_data.json
+param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/3compartment_obs_data.json
   # param_id_obs_path: /home/farg967/Documents/git_projects/circulatory_autogen/resources/SN_simple_obs_data.json
 # param_id_obs_path: /home/farg967/Documents/test/resources/3compartment_obs_data.json
 # param_id_obs_path: /hpc/bghi639/Software/circulatory_autogen/resources/simple_physiological_nonlinear_visco_obs_data.json
