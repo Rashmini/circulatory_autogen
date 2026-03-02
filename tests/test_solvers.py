@@ -43,15 +43,15 @@ def _normalize_variable_name(var_name, solver_type):
             var = '.'.join(parts[1:])
             return comp, var
         return None, var_name
-    elif solver_type == 'opencor':
+    elif solver_type == 'opencor' or solver_type == 'python':
         # Format: component/variable
         parts = var_name.split('/')
         if len(parts) == 2:
             return parts[0], parts[1]
         return None, var_name
-    elif solver_type == 'python':
-        # Format: variable (no component prefix typically)
-        return None, var_name
+    # elif solver_type == 'python':
+    #     # Format: variable (no component prefix typically)
+    #     return None, var_name
     return None, var_name
 
 
@@ -274,8 +274,8 @@ def _compare_solver_results(ref_helper, ref_name, other_helper, other_name, tole
         other_dict[var] = other_results[i][0]
     
     # Match variables
-    ref_type = 'myokit' if 'Myokit' in ref_name else ('opencor' if 'OpenCOR' in ref_name else 'python')
-    other_type = 'myokit' if 'Myokit' in other_name else ('opencor' if 'OpenCOR' in other_name else 'python')
+    ref_type = 'myokit' if 'myokit' in ref_name else ('opencor' if 'OpenCOR' in ref_name else 'python')
+    other_type = 'myokit' if 'myokit' in other_name else ('opencor' if 'OpenCOR' in other_name else 'python')
     
     var_mapping = _match_variables(ref_vars, ref_type, other_vars, other_type)
     
@@ -388,8 +388,8 @@ def test_init_states_myokit(base_user_inputs, resources_dir):
     y_name = next((n for n in names if n.endswith(".y")), None)
     assert x_name is not None and y_name is not None, f"Could not find x/y. Sample: {names[:20]}"
 
-    x0 = float(np.asarray(helper.get_results([x_name], flatten=True)[0][0])[0])
-    y0 = float(np.asarray(helper.get_results([y_name], flatten=True)[0][0])[0])
+    x0 = float(np.asarray(helper.get_results([x_name], flatten=True)[0][0]))
+    y0 = float(np.asarray(helper.get_results([y_name], flatten=True)[0][0]))
     assert np.isclose(x0, 6.0, rtol=0, atol=1e-12), f"Expected x(0)=6.0, got {x0} ({x_name})"
     assert np.isclose(y0, 1.0, rtol=0, atol=1e-12), f"Expected y(0)=1.0, got {y0} ({y_name})"
 
@@ -547,10 +547,10 @@ def _run_all_solvers_and_compare(model_name, model_path, temp_model_dir, dt=0.01
     Returns:
         Tuple of (results dict, comparison_results dict, helpers dict)
     """
-    full_model_path = os.path.join(_TEST_ROOT, model_path)
+    full_model_path_cellml = os.path.join(_TEST_ROOT, model_path)
     
-    if not os.path.exists(full_model_path):
-        pytest.fail(f"Model file not found: {full_model_path}")
+    if not os.path.exists(full_model_path_cellml):
+        pytest.fail(f"Model file not found: {full_model_path_cellml}")
     
     solver_info = {"MaximumStep": 0.0001}
     helpers = {}
@@ -562,7 +562,7 @@ def _run_all_solvers_and_compare(model_name, model_path, temp_model_dir, dt=0.01
             # Generate Python model from CellML
             try:
                 py_generator = PythonGenerator(
-                    full_model_path,
+                    full_model_path_cellml,
                     output_dir=temp_model_dir,
                     module_name=model_name
                 )
@@ -571,6 +571,8 @@ def _run_all_solvers_and_compare(model_name, model_path, temp_model_dir, dt=0.01
             except Exception as e:
                 results[solver] = {"success": False, "error": str(e)}
                 pytest.fail(f"{model_name} {model_type} {solver} {method} failed: Failed to generate Python model: {e}")
+        else:
+            full_model_path = full_model_path_cellml
 
         try:
             helper = get_simulation_helper(model_path=full_model_path, model_type=model_type, solver=solver, dt=dt, sim_time=sim_time, solver_info=solver_info, pre_time=pre_time)

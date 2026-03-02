@@ -227,8 +227,10 @@ class YamlFileParser(object):
         # Parse and validate the solver parameter
         # Supported solvers: CVODE (OpenCOR), CVODE_myokit (Myokit), or solve_ivp methods (RK45, RK4, etc.)
         
-        valid_cellml_solvers = ['CVODE', 'CVODE_myokit']
-        valid_cpp_solvers = ['CVODE', 'RK4', 'PETSC']
+        valid_cellml_solvers = ['CVODE_opencor', 'CVODE_myokit']
+        valid_cellml_methods = ['CVODE']
+        valid_cpp_solvers = ['CVODE', 'RK4', 'PETSC'] # TODO should this be different to methods?
+        valid_cpp_methods = ['CVODE', 'RK4', 'PETSC']
         # Common solve_ivp methods (add more as needed)
         valid_python_solvers = ['solve_ivp']
         valid_solve_ivp_methods = ['RK45', 'RK23', 'DOP853', 'Radau', 'BDF', 'LSODA', 'forward_euler']
@@ -236,6 +238,9 @@ class YamlFileParser(object):
         solver_name = inp_data_dict.get('solver_info', {}).get('solver')
         if solver_name is None:
             solver_name = inp_data_dict.get('solver')
+        
+        if solver_name == 'CVODE':
+            solver_name = 'CVODE_myokit' # default to CVODE_myokit for cellml models
 
         if solver_name is None:
             if inp_data_dict.get('model_type') == 'cellml_only':

@@ -17,7 +17,7 @@
           },
           {    
             "port_type":"respiratory_lung_muscle_pressure_port",
-            "variables":["alpha_P_mus"]
+            "variables":["Delta_P_mus"]
           }
         ],
         "exit_ports":
@@ -47,7 +47,6 @@
           ["P_mus", "J_per_m3", "access", "variable"],
           ["flag_P_mus_control", "dimensionless", "access", "constant"],
           ["flag_RR_control", "dimensionless", "access", "constant"],
-          ["alpha_P_mus", "J_per_m3", "access", "boundary_condition"],
           ["P_mus_min_wCont", "J_per_m3", "access", "variable"],
           ["P_mus_min", "J_per_m3", "access", "constant"],
           ["P_mus_max_wCont", "J_per_m3", "access", "variable"],
@@ -88,6 +87,7 @@
           ["t_floor", "second", "access", "variable"],
           ["T_resp", "second", "access", "constant"],
           ["Delta_RR_resp", "per_s", "access", "boundary_condition"],
+          ["Delta_P_mus", "J_per_m3", "access", "boundary_condition"],
           ["T_resp_wCont", "second", "access", "variable"],
           ["IE_ratio", "dimensionless", "access", "constant"],
           ["T_I", "second", "access", "variable"],
