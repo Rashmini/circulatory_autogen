@@ -368,7 +368,7 @@
           ["tau_pf_max", "second", "access", "constant"],
           ["tau_pf", "second", "access", "variable"],
           ["G_cA_max", "second", "access", "constant"],
-          ["G_cA", "Js_per_m3", "access", "variable"],
+          ["G_cA", "second", "access", "variable"],
           ["G_cf_max", "dimensionless", "access", "constant"],
           ["G_cf", "dimensionless", "access", "variable"],
           ["tau_cA_min", "second", "access", "constant"],
