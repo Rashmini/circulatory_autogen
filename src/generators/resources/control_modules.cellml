@@ -1964,7 +1964,7 @@
                         </apply>
                     </piece>
                     <otherwise>
-                        <cn cellml:units="Js_per_m3">0</cn>
+                        <cn cellml:units="second">0</cn>
                     </otherwise>
                 </piecewise>
             </apply>
