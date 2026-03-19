@@ -486,6 +486,22 @@ def max_minus_min_in_range(x, start_frac=0.0, end_frac=1.0, series_output=False)
         return max_minus_min
 
 @series_to_constant
+def max_minus_mean_in_range(x, start_frac=0.0, end_frac=1.0, series_output=False):
+    # calculate the max minus min for the first max and min in a range.
+    # for example: tidal volume = max(x) - min(x)
+       
+    start_idx = int(start_frac*(len(x)-1))
+    end_idx = int(end_frac*(len(x)-1))
+    range_values_max = np.max(x[start_idx:end_idx])
+    range_values_mean = np.mean(x[start_idx:end_idx])
+    max_minus_mean = range_values_max - range_values_mean 
+
+    if series_output:
+        return x
+    else:
+        return max_minus_mean
+
+@series_to_constant
 def mean_in_range_minus_initial(x, start_frac=0.8, end_frac=1.0, series_output=False):
     # calculate the mean in a range (normally at the end converged stated) minus the initial value in 
     # the subexperiment.
@@ -602,3 +618,15 @@ def calc_AHP_duration(t, V, baseline_voltage=None, series_output=False):
         return np.nan
     else:
         return np.nanmean(ahp_durations)
+
+# TODO change to abs_diff_start to fraction
+@series_to_constant
+def abs_diff_start_to_last_quarter(x, series_output=False):
+    if series_output:
+        return x 
+    else: 
+        quarter_len = len(x) // 4
+        first_value = x[0]
+        last_quarter_values = x[-quarter_len:]
+        return np.abs(first_value - np.mean(last_quarter_values))
+

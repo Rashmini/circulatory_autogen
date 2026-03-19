@@ -1,7 +1,7 @@
 #_______ general inputs ________
 DEBUG: false # TODO change back
 
-# user_inputs_path_override: 
+user_inputs_path_override: /home/farg967/Documents/git_projects/CA_chemo/chemo_model/user_inputs_chemo_model.yaml
 
 # file_prefix: image_to_model
 # file_prefix: 3compartment
@@ -119,5 +119,3 @@ ia_options:
   method: Laplace # profile_likelihood
 
 plot_predictions: true
-user_inputs_path_override: 
-  /home/farg967/Documents/git_projects/CA_user_FA_MG/control_parasymp/user_inputs_control_parasymp.yaml
