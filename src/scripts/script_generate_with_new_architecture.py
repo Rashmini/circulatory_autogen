@@ -93,7 +93,7 @@ def generate_with_new_architecture(do_generation_with_fit_parameters=False,
                     calibrated_cellml_path
                 )
                 inp_data_dict['model_path'] = calibrated_cellml_path
-            return
+                return
         
         parser = CSV0DModelParser(inp_data_dict, parameter_id_dir=param_id_output_dir_abs_path)
     else:

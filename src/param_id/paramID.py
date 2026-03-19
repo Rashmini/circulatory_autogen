@@ -2049,14 +2049,14 @@ class OpencorParamID():
         obs_dicts = []
         obs_arrays = []
         for obs_item in obs:                                                    
-            if return_series:
-                obs_dict, obs_array = self.get_obs_output_dict(obs_item, get_all_series=True)
-                obs_dicts.append(obs_dict)
-                obs_arrays.append(obs_array)
-            else:
-                obs_dict = self.get_obs_output_dict(obs_item)
-                obs_dicts.append(obs_dict)
-                obs_arrays.append(None)
+            # if return_series:
+            obs_dict, obs_array = self.get_obs_output_dict(obs_item, get_all_series=True)
+            obs_dicts.append(obs_dict)
+            obs_arrays.append(obs_array)
+            # else:
+            #     obs_dict = self.get_obs_output_dict(obs_item)
+            #     obs_dicts.append(obs_dict)
+            #     obs_arrays.append(None)
 
         if only_one_exp != -1:
             # only print out results if doing all experiments, otherwise cost will be strange
@@ -2066,6 +2066,21 @@ class OpencorParamID():
         print(f'cost should be {best_cost}')
         print('cost check after single simulation is {}'.format(cost_check))
 
+        if abs(best_cost - cost_check) > 1e-3:
+            print(f'WARNING: best cost {best_cost} is not close to cost check {cost_check}')
+            print('calculating some debug metrics for this issue')
+
+            for exp_idx in range(self.protocol_info["num_experiments"]):
+                best_fit_outputs = np.load(os.path.join(self.output_dir, f'all_outputs_with_best_param_vals_exp_{exp_idx}.npz'))
+                this_run_outputs = self.sim_helper.get_all_results_dict()
+                
+                for obs_idx in range(len(obs)):
+                    best_fit_output = best_fit_outputs[obs_idx]
+                    this_run_output = this_run_outputs[obs_idx]
+                    print('printing for the zeroth index of the output difference')
+                    print(f'best fit output: {best_fit_output[0]}, this run output: {this_run_output[0]}')
+                    print(f'difference: {best_fit_output[0] - this_run_output[0]}')
+            
         print(f'final obs values :')
         for idx, obs_dict in enumerate(obs_dicts):
             print(f'subexperiment {idx+1}:')
