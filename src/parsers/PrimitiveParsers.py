@@ -1242,13 +1242,13 @@ class ObsAndParamDataParser(object):
         # --- Protocol Info Validation ---
         N_exp = protocol['num_experiments']
         
-        if "experiment_colors" not in protocol:
+        if "experiment_colors" not in protocol or protocol["experiment_colors"] is None:
             protocol["experiment_colors"] = ['r'] * N_exp
         elif len(protocol["experiment_colors"]) != N_exp:
             print('Error: experiment_colors length does not match num_experiments, exiting')
             exit()
             
-        if "experiment_labels" not in protocol:
+        if "experiment_labels" not in protocol or protocol["experiment_labels"] is None:
             protocol["experiment_labels"] = [None] * N_exp
         elif len(protocol["experiment_labels"]) != N_exp:
             print('Error: experiment_labels length does not match num_experiments, exiting')
