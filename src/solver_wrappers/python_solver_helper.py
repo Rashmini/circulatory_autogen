@@ -36,6 +36,7 @@ class SimulationHelper:
         self._load_model()
         self._init_state()
         self.update_times(dt, 0.0, sim_time, pre_time)
+        self._has_run = False
 
     def get_time(self, include_pre_time=False):
         if include_pre_time:
@@ -239,6 +240,7 @@ class SimulationHelper:
                     pass
             return False
         self._post_process(sol)
+        self._has_run = True
         # update current state to final
         self.states = list(sol.y[:, -1])
         if DEBUG:
@@ -289,9 +291,17 @@ class SimulationHelper:
     def get_all_results(self, flatten=False):
         return self.get_results(self.get_all_variable_names(), flatten=flatten)
 
+    def get_all_results_dict(self):
+        if not self._has_run:
+            raise RuntimeError("Simulation has not been run yet.")
+        variable_names = self.get_all_variable_names()
+        values = self.get_results(variable_names, flatten=True)
+        return {name: np.asarray(val) for name, val in zip(variable_names, values)}
+
     # ---- reset helpers ----
     def reset_and_clear(self, only_one_exp=-1):
         self._init_state()
+        self._has_run = False
 
     def reset_states(self):
         self.states = copy.copy(self.default_state_inits)

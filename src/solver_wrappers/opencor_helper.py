@@ -64,6 +64,7 @@ class SimulationHelper():
             self.tSim = np.linspace(pre_time, self.stop_time, self.n_steps + 1)  # time values for stored part of simulation
         else:
             self.tSim = None
+        self._has_run = False
         
     def get_time(self, include_pre_time=False):
         if include_pre_time:
@@ -130,12 +131,14 @@ class SimulationHelper():
             self.reset_and_clear()
             return False
 
+        self._has_run = True
         return True
 
     def reset_and_clear(self, only_one_exp=-1):
         self.simulation.reset(True)
         self.simulation.release_all_values()
         self.simulation.clear_results()
+        self._has_run = False
 
     def reset_states(self):
         self.simulation.reset(False)  # True resets everything, False resets only the states
@@ -151,6 +154,13 @@ class SimulationHelper():
         variable_names = self.get_all_variable_names()
         results = self.get_results(variable_names, flatten=flatten)
         return results
+
+    def get_all_results_dict(self):
+        if not self._has_run:
+            raise RuntimeError("Simulation has not been run yet.")
+        variable_names = self.get_all_variable_names()
+        values = self.get_results(variable_names, flatten=True)
+        return {name: np.asarray(val) for name, val in zip(variable_names, values)}
 
     def get_results(self, variables_list_of_lists, flatten=False):
         # if the input is a list of variables, turn it into a list of lists

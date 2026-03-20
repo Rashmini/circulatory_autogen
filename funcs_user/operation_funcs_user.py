@@ -619,9 +619,9 @@ def calc_AHP_duration(t, V, baseline_voltage=None, series_output=False):
     else:
         return np.nanmean(ahp_durations)
 
-# TODO change to abs_diff_start to fraction
 @series_to_constant
 def abs_diff_start_to_last_quarter(x, series_output=False):
+    # TODO change to abs_diff_start to fraction
     if series_output:
         return x 
     else: 

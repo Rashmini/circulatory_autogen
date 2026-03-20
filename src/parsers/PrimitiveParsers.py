@@ -775,6 +775,16 @@ class ObsAndParamDataParser(object):
             return None
 
         gt_df, protocol_info, prediction_info = None, None, None
+        REQUIRED = "REQUIRED"
+
+        def _is_missing_scalar(val):
+            if val is None:
+                return True
+            try:
+                is_na = pd.isna(val)
+            except Exception:
+                return False
+            return isinstance(is_na, (bool, np.bool_)) and bool(is_na)
 
         # --- Case 1: Simple list of data items ---
         if type(json_obj) == list:
@@ -788,19 +798,16 @@ class ObsAndParamDataParser(object):
         # --- Case 2: Dictionary structure ---
         elif type(json_obj) == dict:
             # Load Data Items (gt_df)
-            if 'data_items' in json_obj.keys():
-                gt_df = pd.DataFrame(json_obj['data_items'])
-            elif 'data_item' in json_obj.keys():
-                gt_df = pd.DataFrame(json_obj['data_item']) 
+            if 'data_items' in json_obj.keys() or 'data_item' in json_obj.keys():
+                data_items = json_obj.get('data_items', json_obj.get('data_item', []))
+                gt_df = pd.DataFrame(data_items)
             else:
                 print("data_items not found in json object. ",
                       "Please check that data_items is the key for the list of data items")
 
             # Load Protocol Info
             if 'protocol_info' in json_obj.keys():
-                protocol_info = json_obj['protocol_info']
-                if "sim_times" not in protocol_info: protocol_info["sim_times"] = [[sim_time]]
-                if "pre_times" not in protocol_info: protocol_info["pre_times"] = [pre_time]
+                protocol_info = copy.deepcopy(json_obj['protocol_info'])
             else:
                 if pre_time is None or sim_time is None:
                     print("protocol_info not found in json object. ",
@@ -809,23 +816,189 @@ class ObsAndParamDataParser(object):
                     exit()
                 protocol_info = {"pre_times": [pre_time], "sim_times": [[sim_time]], "params_to_change": {}}
 
+            protocol_schema = {
+                "pre_times": {"types": (list, tuple, np.ndarray), "default": [pre_time] if pre_time is not None else REQUIRED},
+                "sim_times": {"types": (list, tuple, np.ndarray), "default": [[sim_time]] if sim_time is not None else REQUIRED},
+                "params_to_change": {"types": (dict,), "default": {}},
+                "experiment_labels": {"types": (list, tuple, np.ndarray), "default": None},
+                "experiment_colors": {"types": (list, tuple, np.ndarray), "default": None},
+            }
+
+            unknown_protocol_keys = sorted(set(protocol_info.keys()) - set(protocol_schema.keys()))
+            if len(unknown_protocol_keys) > 0:
+                raise ValueError(
+                    f"Unknown protocol_info keys not in schema: {unknown_protocol_keys}"
+                )
+
+            missing_protocol_required = []
+            protocol_type_errors = []
+            for key, rules in protocol_schema.items():
+                allowed = rules["types"]
+                default = rules["default"]
+
+                if key not in protocol_info or _is_missing_scalar(protocol_info[key]):
+                    if default == REQUIRED:
+                        missing_protocol_required.append(key)
+                    else:
+                        protocol_info[key] = copy.deepcopy(default)
+                        continue
+
+                if not isinstance(protocol_info[key], allowed):
+                    protocol_type_errors.append(
+                        f"protocol_info['{key}']: expected {allowed}, got {type(protocol_info[key])}"
+                    )
+
+            if len(missing_protocol_required) > 0:
+                raise ValueError(
+                    f"Missing required protocol_info keys: {sorted(missing_protocol_required)}"
+                )
+            if len(protocol_type_errors) > 0:
+                raise ValueError(
+                    "Invalid protocol_info value types:\n" + "\n".join(protocol_type_errors)
+                )
+
             # Load Prediction Info
             if 'prediction_items' in json_obj.keys():
+                prediction_items = json_obj['prediction_items']
+                if not isinstance(prediction_items, (list, tuple)):
+                    raise ValueError(
+                        f"prediction_items must be a list of dict entries, got {type(prediction_items)}"
+                    )
+
+                prediction_entry_schema = {
+                    "variable": {"types": (str,), "default": REQUIRED},
+                    "unit": {"types": (str,), "default": REQUIRED},
+                    "name_for_plotting": {"types": (str,), "default": lambda entry: entry["variable"]},
+                    "experiment_idx": {"types": (int, np.integer), "default": 0},
+                }
+
                 prediction_info = {'names': [], 'units': [], 'names_for_plotting': [], 'experiment_idxs': []}
-                for entry in json_obj['prediction_items']:
-                    if 'variable' not in entry: print('"variable" missing, exiting'); exit()
-                    if 'unit' not in entry: print('"unit" missing, exiting'); exit()
-                    
+                for entry_idx, raw_entry in enumerate(prediction_items):
+                    if not isinstance(raw_entry, dict):
+                        raise ValueError(
+                            f"prediction_items[{entry_idx}] must be a dict, got {type(raw_entry)}"
+                        )
+                    entry = copy.deepcopy(raw_entry)
+
+                    unknown_pred_keys = sorted(set(entry.keys()) - set(prediction_entry_schema.keys()))
+                    if len(unknown_pred_keys) > 0:
+                        raise ValueError(
+                            f"Unknown keys in prediction_items[{entry_idx}] not in schema: {unknown_pred_keys}"
+                        )
+
+                    missing_pred_required = []
+                    pred_type_errors = []
+                    for key, rules in prediction_entry_schema.items():
+                        allowed = rules["types"]
+                        default = rules["default"]
+
+                        if key not in entry or _is_missing_scalar(entry[key]):
+                            if default == REQUIRED:
+                                missing_pred_required.append(key)
+                                continue
+                            entry[key] = default(entry) if callable(default) else copy.deepcopy(default)
+
+                        if not isinstance(entry[key], allowed):
+                            pred_type_errors.append(
+                                f"prediction_items[{entry_idx}]['{key}']: expected {allowed}, got {type(entry[key])}"
+                            )
+
+                    if len(missing_pred_required) > 0:
+                        raise ValueError(
+                            f"Missing required keys in prediction_items[{entry_idx}]: {sorted(missing_pred_required)}"
+                        )
+                    if len(pred_type_errors) > 0:
+                        raise ValueError(
+                            "Invalid prediction_items value types:\n" + "\n".join(pred_type_errors)
+                        )
+
                     prediction_info['names'].append(entry['variable'])
                     prediction_info['units'].append(entry['unit'])
-                    prediction_info['names_for_plotting'].append(entry.get('name_for_plotting', entry['variable']))
-                    prediction_info['experiment_idxs'].append(entry.get('experiment_idx', 0))
+                    prediction_info['names_for_plotting'].append(entry['name_for_plotting'])
+                    prediction_info['experiment_idxs'].append(entry['experiment_idx'])
             else:
                 prediction_info = {'names': [], 'units': [], 'names_for_plotting': [], 'experiment_idxs': []}
             
         else:
             print(f"Error: unknown data type for imported json object of {type(json_obj)}")
             return None
+
+        # Fill common optional fields so downstream processing can rely on defaults.
+        if gt_df is not None:
+            schema = {
+                "variable": {"types": (str,), "default": REQUIRED},
+                "name_for_plotting": {"types": (str,), "default": lambda df: df["variable"]},
+                "data_type": {"types": (str,), "default": REQUIRED},
+                "unit": {"types": (str,), "default": REQUIRED},
+                "weight": {"types": (int, float, np.integer, np.floating), "default": 1.0},
+                "operands": {"types": (list, tuple, np.ndarray), "default": REQUIRED},
+                "operation": {"types": (str,), "default": None},
+                "operation_kwargs": {"types": (dict,), "default": lambda df: [{} for _ in range(len(df))]},
+                "value": {"types": (int, float, np.integer, np.floating, list, np.ndarray), "default": REQUIRED},
+                "std": {"types": (int, float, np.integer, np.floating, list, np.ndarray), "default": REQUIRED},
+                "experiment_idx": {"types": (int, np.integer), "default": 0},
+                "subexperiment_idx": {"types": (int, np.integer), "default": 0},
+                "plot_type": {"types": (str,), "default": None},
+                "plot_color": {"types": (str,), "default": None},
+                "comment": {"types": (str,), "default": None},
+                "cost_type": {"types": (str,), "default": "MSE"},
+                "obs_type": {"types": (str,), "default": None},
+                "frequencies": {"types": (list, tuple, np.ndarray, int, float, np.integer, np.floating), "default": None},
+                "phase_weight": {"types": (int, float, np.integer, np.floating), "default": None},
+                "phase": {"types": (list, tuple, np.ndarray, int, float, np.integer, np.floating), "default": None},
+                "prob_dist_params": {"types": (dict,), "default": None},
+                "obs_dt": {"types": (int, float, np.integer, np.floating), "default": None},
+                "dt": {"types": (int, float, np.integer, np.floating), "default": None},
+                "sample_rate": {"types": (int, float, np.integer, np.floating), "default": None},
+            }
+
+            unknown_cols = sorted(set(gt_df.columns) - set(schema.keys()))
+            if len(unknown_cols) > 0:
+                raise ValueError(
+                    f"Unknown data_item keys not in schema: {unknown_cols}"
+                )
+
+            type_errors = []
+            missing_required_cols = []
+            for col, rules in schema.items():
+                allowed = rules["types"]
+                default = rules["default"]
+
+                if col not in gt_df.columns:
+                    if default == REQUIRED:
+                        missing_required_cols.append(col)
+                        continue
+                    if callable(default):
+                        gt_df[col] = pd.Series(default(gt_df), index=gt_df.index)
+                    else:
+                        gt_df[col] = default
+                else:
+                    if default != REQUIRED:
+                        missing_mask = gt_df[col].apply(_is_missing_scalar)
+                        if missing_mask.any():
+                            if callable(default):
+                                default_series = pd.Series(default(gt_df), index=gt_df.index)
+                                gt_df[col] = gt_df[col].where(~missing_mask, default_series)
+                            else:
+                                gt_df[col] = gt_df[col].where(~missing_mask, default)
+
+                for row_idx, val in gt_df[col].items():
+                    if _is_missing_scalar(val):
+                        continue
+                    if not isinstance(val, allowed):
+                        type_errors.append(
+                            f"row {row_idx}, column '{col}': expected {allowed}, got {type(val)}"
+                        )
+
+            if len(missing_required_cols) > 0:
+                raise ValueError(
+                    f"Missing required data_item keys: {sorted(missing_required_cols)}"
+                )
+
+            if len(type_errors) > 0:
+                raise ValueError(
+                    "Invalid data_item value types:\n" + "\n".join(type_errors)
+                )
         
         return {
             "gt_df": gt_df, 
