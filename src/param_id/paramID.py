@@ -2071,15 +2071,23 @@ class OpencorParamID():
             print('calculating some debug metrics for this issue')
 
             for exp_idx in range(self.protocol_info["num_experiments"]):
+                print(f'running simulation for experiment {exp_idx} to compare best fit and this run outputs')
                 best_fit_outputs = np.load(os.path.join(self.output_dir, f'all_outputs_with_best_param_vals_exp_{exp_idx}.npz'))
+                _, _ = self.get_cost_and_obs_from_params(self.best_param_vals, reset=False, only_one_exp=exp_idx)
                 this_run_outputs = self.sim_helper.get_all_results_dict()
-                
+                self.sim_helper.reset_and_clear()
+
                 for obs_idx in range(len(obs)):
-                    best_fit_output = best_fit_outputs[obs_idx]
-                    this_run_output = this_run_outputs[obs_idx]
-                    print('printing for the zeroth index of the output difference')
-                    print(f'best fit output: {best_fit_output[0]}, this run output: {this_run_output[0]}')
-                    print(f'difference: {best_fit_output[0] - this_run_output[0]}')
+                    for key in best_fit_outputs.keys():
+                        print(f'parameter {key}')
+                        best_fit_output = best_fit_outputs[key]
+                        this_run_output = this_run_outputs[key]
+                        print('printing for the first `10 timepoints of the output difference')
+                        print(f'best fit output: {best_fit_output[:10]}')
+                        print(f'this run output: {this_run_output[:10]}')
+                        print(f'difference: {best_fit_output[:10] - this_run_output[:10]}')
+                        print(f'relative difference: {np.abs(best_fit_output[:10] - this_run_output[:10]) / (np.abs(best_fit_output[:10]) + 1e-10)}')
+        
             
         print(f'final obs values :')
         for idx, obs_dict in enumerate(obs_dicts):
