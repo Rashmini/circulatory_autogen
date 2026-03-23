@@ -930,7 +930,7 @@ class ObsAndParamDataParser(object):
                 "name_for_plotting": {"types": (str,), "default": lambda df: df["variable"]},
                 "data_type": {"types": (str,), "default": REQUIRED},
                 "unit": {"types": (str,), "default": REQUIRED},
-                "weight": {"types": (int, float, np.integer, np.floating, list, np.ndarray), "default": 1.0},
+                "weight": {"types": (int, float, np.integer, np.floating), "default": 1.0},
                 "operands": {"types": (list, tuple, np.ndarray), "default": REQUIRED},
                 "operation": {"types": (str,), "default": None},
                 "operation_kwargs": {"types": (dict,), "default": lambda df: [{} for _ in range(len(df))]},

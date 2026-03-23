@@ -629,7 +629,7 @@ def test_compare_optimisers(base_user_inputs, resources_dir, temp_output_dir, mp
         },
         'param_id_obs_path': os.path.join(resources_dir, '3compartment_obs_data.json'),
         'param_id_output_dir': temp_output_dir,
-        'debug_optimiser_options': {'num_calls_to_function': 10000, 'max_patience': 40, 'cost_convergence':1e-3},
+        'debug_optimiser_options': {'num_calls_to_function': 10000, 'max_patience': 500},
     })
     
     # Create comparison object with full number of calls for testing
