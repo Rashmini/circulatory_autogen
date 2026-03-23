@@ -65,6 +65,7 @@ class SimulationHelper():
         else:
             self.tSim = None
         self._has_run = False
+        self._last_results_dict = None
         
     def get_time(self, include_pre_time=False):
         if include_pre_time:
@@ -135,6 +136,8 @@ class SimulationHelper():
         return True
 
     def reset_and_clear(self, only_one_exp=-1):
+        if self._has_run:
+            self._last_results_dict = self._collect_all_results_dict()
         self.simulation.reset(True)
         self.simulation.release_all_values()
         self.simulation.clear_results()
@@ -156,8 +159,14 @@ class SimulationHelper():
         return results
 
     def get_all_results_dict(self):
-        if not self._has_run:
-            raise RuntimeError("Simulation has not been run yet.")
+        if self._has_run:
+            self._last_results_dict = self._collect_all_results_dict()
+            return {name: np.asarray(val).copy() for name, val in self._last_results_dict.items()}
+        if self._last_results_dict is not None:
+            return {name: np.asarray(val).copy() for name, val in self._last_results_dict.items()}
+        raise RuntimeError("Simulation has not been run yet.")
+
+    def _collect_all_results_dict(self):
         variable_names = self.get_all_variable_names()
         values = self.get_results(variable_names, flatten=True)
         return {name: np.asarray(val) for name, val in zip(variable_names, values)}

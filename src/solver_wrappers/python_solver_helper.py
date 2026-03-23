@@ -37,6 +37,7 @@ class SimulationHelper:
         self._init_state()
         self.update_times(dt, 0.0, sim_time, pre_time)
         self._has_run = False
+        self._last_results_dict = None
 
     def get_time(self, include_pre_time=False):
         if include_pre_time:
@@ -175,6 +176,15 @@ class SimulationHelper:
                     self.states[idx_res] = val
                 elif kind == "var":
                     self.variables[idx_res] = val
+                    resolved_name = self.var_idx_to_name.get(idx_res, "")
+                    # If a constant follows the common "<state>_init" naming,
+                    # keep the corresponding state/default-init synchronized.
+                    if resolved_name.endswith("_init"):
+                        state_name = resolved_name[:-5]
+                        state_idx = self.state_name_to_idx.get(state_name)
+                        if state_idx is not None:
+                            self.states[state_idx] = val
+                            self.default_state_inits[state_idx] = val
                 else:
                     raise ValueError(f"parameter name {name} not found in states or variables")
         self.model.compute_computed_constants(self.variables)
@@ -292,14 +302,22 @@ class SimulationHelper:
         return self.get_results(self.get_all_variable_names(), flatten=flatten)
 
     def get_all_results_dict(self):
-        if not self._has_run:
-            raise RuntimeError("Simulation has not been run yet.")
+        if self._has_run:
+            self._last_results_dict = self._collect_all_results_dict()
+            return {name: np.asarray(val).copy() for name, val in self._last_results_dict.items()}
+        if self._last_results_dict is not None:
+            return {name: np.asarray(val).copy() for name, val in self._last_results_dict.items()}
+        raise RuntimeError("Simulation has not been run yet.")
+
+    def _collect_all_results_dict(self):
         variable_names = self.get_all_variable_names()
         values = self.get_results(variable_names, flatten=True)
         return {name: np.asarray(val) for name, val in zip(variable_names, values)}
 
     # ---- reset helpers ----
     def reset_and_clear(self, only_one_exp=-1):
+        if self._has_run:
+            self._last_results_dict = self._collect_all_results_dict()
         self._init_state()
         self._has_run = False
 

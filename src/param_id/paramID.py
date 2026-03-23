@@ -1485,7 +1485,7 @@ class OpencorParamID():
 
             # running with best_param and saving outputs
             for exp_idx in range(self.protocol_info["num_experiments"]):
-                self.simulate_once(self.best_param_vals, reset=False, only_one_exp=exp_idx)
+                self.simulate_once(self.best_param_vals, reset=True, only_one_exp=exp_idx)
                 all_outputs_dict = self.sim_helper.get_all_results_dict()
                 # save as npz
                 np.savez(os.path.join(self.output_dir, f'all_outputs_with_best_param_vals_exp_{exp_idx}.npz'), **all_outputs_dict)
@@ -1505,14 +1505,17 @@ class OpencorParamID():
             
         operands_outputs_list = []
         for exp_idx in range(self.protocol_info["num_experiments"]):
+            if exp_idx not in exp_idxs_to_run:
+                # Preserve indexing expected by downstream subexp_count lookups.
+                for _ in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
+                    operands_outputs_list.append(None)
+                continue
+
             # set param vals for this iteration of param_id
             self.sim_helper.set_param_vals(self.param_id_info["param_names"], param_vals)
             self.sim_helper.reset_states() # this needs to be done to make sure states defined by a constant are set
             current_time = 0
             for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
-                if exp_idx not in exp_idxs_to_run:
-                    operands_outputs_list.append(None)
-                    continue
                 subexp_count = int(np.sum([num_sub for num_sub in 
                                             self.protocol_info["num_sub_per_exp"][:exp_idx]]) + this_sub_idx)
         
@@ -2073,9 +2076,8 @@ class OpencorParamID():
             for exp_idx in range(self.protocol_info["num_experiments"]):
                 print(f'running simulation for experiment {exp_idx} to compare best fit and this run outputs')
                 best_fit_outputs = np.load(os.path.join(self.output_dir, f'all_outputs_with_best_param_vals_exp_{exp_idx}.npz'))
-                _, _ = self.get_cost_and_obs_from_params(self.best_param_vals, reset=False, only_one_exp=exp_idx)
+                _, _ = self.get_cost_and_obs_from_params(self.best_param_vals, reset=True, only_one_exp=exp_idx)
                 this_run_outputs = self.sim_helper.get_all_results_dict()
-                self.sim_helper.reset_and_clear()
 
                 for obs_idx in range(len(obs)):
                     for key in best_fit_outputs.keys():

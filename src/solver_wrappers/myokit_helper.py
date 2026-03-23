@@ -43,6 +43,7 @@ class SimulationHelper:
         self._init_defaults()
 
         self.last_log = None
+        self._last_results_dict = None
 
     def get_time(self, include_pre_time=False):
         print("TODO CHECK MYOKIT FUNCTIONALITY FOR TIME. I THINK IT IS DIFFERENT TO OPENCOR")
@@ -210,6 +211,8 @@ class SimulationHelper:
 
     def _recreate_simulation(self):
         self.simulation = myokit.Simulation(self.model)
+        # Store baseline initial state used before any pre-simulation.
+        self.original_state = self._get_simulation_model().initial_values(as_floats=True)
 
         # apply solver settings
         if "MaximumStep" in self.solver_info:
@@ -227,6 +230,12 @@ class SimulationHelper:
         self.last_log = None
         if hasattr(self, "all_vars"):
             self._init_defaults()
+
+    def _get_simulation_model(self):
+        # Myokit API differs across versions: prefer public model() when present.
+        if hasattr(self.simulation, "model") and callable(getattr(self.simulation, "model")):
+            return self.simulation.model()
+        return self.simulation._model
 
     def _find_paced_parameter_name(self, protocol_info):
         if not isinstance(protocol_info, dict):
@@ -296,12 +305,23 @@ class SimulationHelper:
         return True
 
     def reset_and_clear(self, only_one_exp=-1):
+        # Fully reset to baseline default state (before any pre-simulation).
+        if self.last_log is not None:
+            self._last_results_dict = self._collect_all_results_dict_from_log()
+        self.simulation.set_default_state(self.original_state)
         self.simulation.reset()
         self.last_log = None
 
     def reset_states(self):
+        # Reset to current default, then update state/default to reflect constants.
+        if self.last_log is not None:
+            self._last_results_dict = self._collect_all_results_dict_from_log()
         self.simulation.reset()
-        # Re-apply any RHS changes to constants already set on the model
+        updated_initial_state = self._get_simulation_model().initial_values(as_floats=True)
+        self.simulation.set_state(updated_initial_state)
+        self.simulation.set_default_state(updated_initial_state)
+        self.default_states = list(updated_initial_state)
+        self.last_log = None
 
     def get_all_variable_names(self):
         # Return variables that are actually logged (Myokit restrictions apply)
@@ -331,8 +351,14 @@ class SimulationHelper:
         return results
     
     def get_all_results_dict(self):
-        if self.last_log is None:
-            raise RuntimeError("Simulation has not been run yet.")
+        if self.last_log is not None:
+            self._last_results_dict = self._collect_all_results_dict_from_log()
+            return {name: np.asarray(val).copy() for name, val in self._last_results_dict.items()}
+        if self._last_results_dict is not None:
+            return {name: np.asarray(val).copy() for name, val in self._last_results_dict.items()}
+        raise RuntimeError("Simulation has not been run yet.")
+
+    def _collect_all_results_dict_from_log(self):
         return {qname: np.asarray(self.last_log[qname]) for qname in self.last_log.keys()}
 
     def get_init_param_vals(self, param_names):
@@ -368,7 +394,6 @@ class SimulationHelper:
                 if kind == "state":
                     self.simulation.set_state_value(self.state_index[qname], float(val))
                 elif kind == "var":
-                    var = self.qname_to_var[qname]
                     # Set RHS to constant value
                     if isinstance(val, str):
                         trace_name = val
@@ -400,11 +425,22 @@ class SimulationHelper:
                         raise ValueError(f"Parameter value {val} is not a valid type. {type(val)}" + \
                                          "must be a float, np.float64, or int.")
                     else:
-                        self.simulation.set_constant(qname, float(val))
+                        if self.paced_parameter_qname is not None and qname == self.paced_parameter_qname:
+                            # If this variable is bound to "pace", set a constant protocol value
+                            # for this segment instead of set_constant (which is invalid for bound vars).
+                            pace_val = float(val)
+                            duration = float(max(self.sim_time if self.sim_time is not None else 1.0, self.dt))
+                            protocol = myokit.TimeSeriesProtocol(
+                                [0.0, duration],
+                                [pace_val, pace_val],
+                            )
+                            self.simulation.set_protocol(protocol, label='pace')
+                        else:
+                            self.simulation.set_constant(qname, float(val))
                 else:
                     raise ValueError(f"parameter {name} not found")
-        # Update cached defaults for future resets
-        self.default_states = list(self.simulation.state())
+        # Keep state defaults consistent with model-defined initial values.
+        self.default_states = list(self._get_simulation_model().initial_values(as_floats=True))
 
     def modify_params_and_run_and_get_results(self, param_names, mod_factors, obs_names, absolute=False):
         if absolute:

@@ -394,6 +394,139 @@ def test_init_states_myokit(base_user_inputs, resources_dir):
     assert np.isclose(y0, 1.0, rtol=0, atol=1e-12), f"Expected y(0)=1.0, got {y0} ({y_name})"
 
 
+def _find_state_series_name(helper, state_basename):
+    candidates = helper.get_all_variable_names()
+    for name in candidates:
+        if name == state_basename:
+            return name
+        if name.endswith(f"/{state_basename}") or name.endswith(f".{state_basename}"):
+            return name
+    raise AssertionError(f"Could not find state '{state_basename}' in variable names: {candidates[:20]}")
+
+
+def _run_and_get_initial_state(helper, state_name):
+    ok = helper.run()
+    assert ok, "Simulation run failed"
+    state_series = helper.get_results([state_name], flatten=True)[0]
+    return float(np.asarray(state_series)[0])
+
+
+@pytest.mark.integration
+@pytest.mark.solver
+@pytest.mark.parametrize("solver,model_type,solver_info", [
+    ("CVODE_myokit", "cellml_only", {"MaximumStep": 0.001, "MaximumNumberOfSteps": 5000}),
+    ("CVODE_opencor", "cellml_only", {"MaximumStep": 0.001, "MaximumNumberOfSteps": 5000}),
+])
+def test_set_param_vals_updates_state_init_for_cellml_solvers(solver, model_type, solver_info):
+    """
+    For 3compartment, q_lv initial state is controlled by q_lv_init.
+    Verify set_param_vals + reset_states updates state initialization consistently.
+    """
+    model_path = "generated_models/3compartment/3compartment.cellml"
+    full_model_path = os.path.join(_TEST_ROOT, model_path)
+    if not os.path.exists(full_model_path):
+        pytest.fail(f"Model file not found: {full_model_path}")
+
+    dt = 0.01
+    sim_time = 0.1
+    pre_time = 0.0
+
+    try:
+        helper = get_simulation_helper(
+            model_path=model_path,
+            model_type=model_type,
+            solver=solver,
+            dt=dt,
+            sim_time=sim_time,
+            solver_info=solver_info,
+            pre_time=pre_time,
+        )
+    except RuntimeError as e:
+        pytest.skip(f"{solver} backend not available: {e}")
+
+    q_name = _find_state_series_name(helper, "q_lv")
+
+    # Case 1: q_lv_init = 2e-4 -> q_lv(0) = 2e-4
+    helper.update_times(dt, 0.0, sim_time, pre_time)
+    helper.set_param_vals(["global/q_lv_init"], [2e-4])
+    helper.reset_states()
+    q0_lo = _run_and_get_initial_state(helper, q_name)
+    assert np.isclose(q0_lo, 2e-4, rtol=0.0, atol=1e-10), (
+        f"{solver}: expected q_lv(0)=2e-4, got {q0_lo}"
+    )
+
+    # get_all_results_dict should still be available after reset via cache.
+    _ = helper.get_all_results_dict()
+    helper.reset_and_clear()
+    cached_results = helper.get_all_results_dict()
+    assert q_name in cached_results, f"{solver}: cached results missing {q_name}"
+
+    # Case 2: q_lv_init = 8e-4 -> q_lv(0) = 8e-4
+    helper.update_times(dt, 0.0, sim_time, pre_time)
+    helper.set_param_vals(["global/q_lv_init"], [8e-4])
+    helper.reset_states()
+    q0_hi = _run_and_get_initial_state(helper, q_name)
+    assert np.isclose(q0_hi, 8e-4, rtol=0.0, atol=1e-10), (
+        f"{solver}: expected q_lv(0)=8e-4, got {q0_hi}"
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.solver
+def test_set_param_vals_updates_state_init_for_python_solver(temp_model_dir):
+    """
+    Same state-init parameter update check for Python solver helper.
+    """
+    cellml_path = os.path.join(_TEST_ROOT, "generated_models/3compartment/3compartment.cellml")
+    if not os.path.exists(cellml_path):
+        pytest.fail(f"Model file not found: {cellml_path}")
+
+    py_generator = PythonGenerator(
+        cellml_path,
+        output_dir=temp_model_dir,
+        module_name="three_compartment_py",
+    )
+    python_model_path = py_generator.generate()
+
+    dt = 0.01
+    sim_time = 0.1
+    pre_time = 0.0
+    solver_info = {"method": "BDF", "rtol": 1e-6, "atol": 1e-8}
+
+    helper = get_simulation_helper(
+        model_path=python_model_path,
+        model_type="python",
+        solver="solve_ivp",
+        dt=dt,
+        sim_time=sim_time,
+        solver_info=solver_info,
+        pre_time=pre_time,
+    )
+
+    q_name = _find_state_series_name(helper, "q_lv")
+
+    helper.update_times(dt, 0.0, sim_time, pre_time)
+    helper.set_param_vals(["global/q_lv_init"], [2e-4])
+    helper.reset_states()
+    q0_lo = _run_and_get_initial_state(helper, q_name)
+    assert np.isclose(q0_lo, 2e-4, rtol=0.0, atol=1e-10), (
+        f"Python solver: expected q_lv(0)=2e-4, got {q0_lo}"
+    )
+
+    _ = helper.get_all_results_dict()
+    helper.reset_and_clear()
+    cached_results = helper.get_all_results_dict()
+    assert q_name in cached_results, "Python solver: cached results missing q_lv state series"
+
+    helper.update_times(dt, 0.0, sim_time, pre_time)
+    helper.set_param_vals(["global/q_lv_init"], [8e-4])
+    helper.reset_states()
+    q0_hi = _run_and_get_initial_state(helper, q_name)
+    assert np.isclose(q0_hi, 8e-4, rtol=0.0, atol=1e-10), (
+        f"Python solver: expected q_lv(0)=8e-4, got {q0_hi}"
+    )
+
+
 @pytest.fixture(scope="function")
 def temp_model_dir():
     """Create a temporary directory for generated Python models."""
