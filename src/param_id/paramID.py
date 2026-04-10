@@ -355,8 +355,8 @@ class CVS0DParamID():
 
         # TODO: Fix for series, amp, phase, and val_for_prob_dist
         if self.model_type == 'casadi_python':
-            cost = self.param_id.get_cost(self.param_id.best_param_vals)
-            list_of_obs_dicts, list_of_all_series = self.param_id.get_obs(self.param_id.best_param_vals, get_all_series=True)
+            cost = self.param_id.get_cost_ca(self.param_id.best_param_vals)
+            list_of_obs_dicts, list_of_all_series = self.param_id.get_obs_ca(self.param_id.best_param_vals, get_all_series=True)
         else:
             cost, best_fit_operands_list = self.param_id.get_cost_and_obs_from_params(self.param_id.best_param_vals)
             list_of_obs_dicts = []
@@ -2098,33 +2098,33 @@ class OpencorParamID():
         self.obs_vec = ca.vertcat(*obs_outputs)
         self.obs_meta = obs_meta
 
-        self.J_cost_symb = ca.gradient(self.cost_symb, self.sim_helper.variables_symb_subset)
+        self.jac_cost_symb = ca.gradient(self.cost_symb, self.sim_helper.variables_symb_subset)
 
-        self.cost_f = ca.Function('cost_f', [self.sim_helper.states_symb, self.sim_helper.variables_symb], [self.cost_symb])
+        self.cost_func = ca.Function('cost_func', [self.sim_helper.states_symb, self.sim_helper.variables_symb], [self.cost_symb])
         
         if get_all_series:
-            self.obs_f = ca.Function('obs_f', [self.sim_helper.states_symb, self.sim_helper.variables_symb], [self.obs_vec, self.obs_series_array_all_vec])
+            self.obs_func = ca.Function('obs_func', [self.sim_helper.states_symb, self.sim_helper.variables_symb], [self.obs_vec, self.obs_series_array_all_vec])
         else:
-            self.obs_f = ca.Function('obs_f', [self.sim_helper.states_symb, self.sim_helper.variables_symb], [self.obs_vec])
+            self.obs_func = ca.Function('obs_func', [self.sim_helper.states_symb, self.sim_helper.variables_symb], [self.obs_vec])
 
-        self.grad_c_f = ca.Function('grad_c_f', [self.sim_helper.states_symb, self.sim_helper.variables_symb], [self.J_cost_symb])
+        self.jac_cost_func = ca.Function('jac_cost_func', [self.sim_helper.states_symb, self.sim_helper.variables_symb], [self.jac_cost_symb])
     
-    def get_jac_cost(self, param_vals):
+    def get_jac_cost_ca(self, param_vals):
         param_names = self.param_id_info["param_names"]
         self.build_casadi_functions(param_names, param_vals)
-        jac_cost = np.array(self.grad_c_f(self.sim_helper.states, self.sim_helper.variables)).flatten()
+        jac_cost = np.array(self.jac_cost_func(self.sim_helper.states, self.sim_helper.variables)).flatten()
         return jac_cost
     
-    def get_cost(self, param_vals):
+    def get_cost_ca(self, param_vals):
         param_names = self.param_id_info["param_names"]
         self.build_casadi_functions(param_names, param_vals)
-        cost= self.cost_f(self.sim_helper.states, self.sim_helper.variables)
+        cost= self.cost_func(self.sim_helper.states, self.sim_helper.variables)
         return cost
     
-    def get_obs(self, param_vals, get_all_series=False):
+    def get_obs_ca(self, param_vals, get_all_series=False):
         param_names = self.param_id_info["param_names"]
         self.build_casadi_functions(param_names, param_vals, get_all_series)
-        obs_val = self.obs_f(self.sim_helper.states, self.sim_helper.variables)
+        obs_val = self.obs_func(self.sim_helper.states, self.sim_helper.variables)
 
         if get_all_series:
             obs_dict, obs_series_array_all = obs_val

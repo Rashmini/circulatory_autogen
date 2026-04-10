@@ -797,22 +797,22 @@ class SciPyMinimizeOptimiser(Optimiser):
         param_maxs_norm = self.param_norm_obj.normalise(self.param_maxs)
         param_ranges_norm = list(zip(param_mins_norm, param_maxs_norm))
 
-        cost_fun = lambda p: float(self.param_id_obj.get_cost(self.param_norm_obj.unnormalise(p)))
+        cost_fun = lambda p: float(self.param_id_obj.get_cost_ca(self.param_norm_obj.unnormalise(p)))
         
-        init_cost = self.param_id_obj.get_cost(init_param_vals)
+        init_cost = self.param_id_obj.get_cost_ca(init_param_vals)
         print(f'Cost before gradient-based optimisation: {init_cost}')
-        init_gradient = self.param_id_obj.get_jac_cost(init_param_vals)
+        init_gradient = self.param_id_obj.get_jac_cost_ca(init_param_vals)
 
         if (self.automatic_differentiation):
             def gradient_func(q):
                 p = self.param_norm_obj.unnormalise(q)
-                dJ_dp = self.param_id_obj.get_jac_cost(p)
+                dJ_dp = self.param_id_obj.get_jac_cost_ca(p)
                 return dJ_dp * self.param_ranges
         else:
             gradient_func = lambda q: approx_fprime(q, cost_fun, epsilon=1e-4)
 
         def stop_if_converge(x):
-            best_cost = self.param_id_obj.get_cost(self.param_norm_obj.unnormalise(x))
+            best_cost = self.param_id_obj.get_cost_ca(self.param_norm_obj.unnormalise(x))
             if best_cost <= self.optimiser_options['cost_convergence']:
                 raise StopIteration(f"Cost converged: {best_cost}")
             
