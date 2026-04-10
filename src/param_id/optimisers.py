@@ -12,6 +12,8 @@ import os
 import csv
 from datetime import date
 from abc import ABC, abstractmethod
+from scipy.optimize import approx_fprime
+from scipy.optimize import minimize
 try:
     from skopt import Optimizer
     SKOPT_AVAILABLE = True
@@ -763,3 +765,80 @@ class CMAESOptimiser(Optimiser):
         comm.Bcast(best_cost_array, root=0)
         self.best_cost = best_cost_array[0]
 
+class SciPyMinimizeOptimiser(Optimiser):
+    """
+    SciPy minimize optimiser for parameter identification.
+    
+    This uses the gradients of the cost function for gradient-based optimisation.
+    """
+
+    def __init__(self, param_id_obj, param_id_info, param_norm_obj, 
+                 num_params, output_dir, optimiser_options=None, 
+                 automatic_differentiation=True, DEBUG=False):
+        """
+        Initialize the SciPy minimize optimiser.
+        """
+        super().__init__(param_id_obj, param_id_info, param_norm_obj, 
+                        num_params, output_dir, optimiser_options, DEBUG)
+        
+        self.automatic_differentiation = automatic_differentiation
+
+        # Prepare bounds
+        self.param_mins = self.param_id_info["param_mins"]
+        self.param_maxs = self.param_id_info["param_maxs"]
+        self.param_ranges = self.param_maxs - self.param_mins
+    
+    def run(self):
+        """Run the SciPy Minimize optimization."""    
+        
+        init_param_vals = np.asarray(self.param_id_obj.param_init)
+
+        param_mins_norm = self.param_norm_obj.normalise(self.param_mins)
+        param_maxs_norm = self.param_norm_obj.normalise(self.param_maxs)
+        param_ranges_norm = list(zip(param_mins_norm, param_maxs_norm))
+
+        cost_fun = lambda p: float(self.param_id_obj.get_cost(self.param_norm_obj.unnormalise(p)))
+        
+        init_cost = self.param_id_obj.get_cost(init_param_vals)
+        print(f'Cost before gradient-based optimisation: {init_cost}')
+        init_gradient = self.param_id_obj.get_jac_cost(init_param_vals)
+
+        if (self.automatic_differentiation):
+            def gradient_func(q):
+                p = self.param_norm_obj.unnormalise(q)
+                dJ_dp = self.param_id_obj.get_jac_cost(p)
+                return dJ_dp * self.param_ranges
+        else:
+            gradient_func = lambda q: approx_fprime(q, cost_fun, epsilon=1e-4)
+
+        def stop_if_converge(x):
+            best_cost = self.param_id_obj.get_cost(self.param_norm_obj.unnormalise(x))
+            if best_cost <= self.optimiser_options['cost_convergence']:
+                raise StopIteration(f"Cost converged: {best_cost}")
+            
+        try: 
+            res = minimize(cost_fun, self.param_norm_obj.normalise(init_param_vals), method='L-BFGS-B', 
+                       bounds=param_ranges_norm, jac=gradient_func, callback=stop_if_converge)
+        except StopIteration as e:
+            print(str(e))
+
+        best_param_vals = self.param_norm_obj.unnormalise(res.x)
+        best_gradient_vals = res.jac/self.param_ranges
+        best_cost_new = res.fun
+
+        self.param_id_obj.set_best_param_vals(best_param_vals)
+
+        self.best_cost = best_cost_new
+        self.best_param_vals = best_param_vals
+        self.init_gradient = init_gradient
+        self.best_gradient = best_gradient_vals
+
+        costs = np.array([float(init_cost), float(best_cost_new)])
+        with open(os.path.join(self.output_dir, 'best_cost_history.csv'), 'a') as file:
+            np.savetxt(file, costs.reshape(-1, 1), fmt='%1.9f', delimiter=',')
+
+        with open(os.path.join(self.output_dir, 'best_param_vals_history.csv'), 'a') as file:
+            param_vals_norm = self.param_norm_obj.normalise(self.best_param_vals.reshape(-1, 1))
+            np.savetxt(file, param_vals_norm.reshape(1,-1), fmt='%.5e', delimiter=', ')
+        
+        self._save_best_params()

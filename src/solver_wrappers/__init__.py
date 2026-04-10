@@ -14,6 +14,12 @@ try:
     from solver_wrappers.opencor_helper import SimulationHelper as OpenCORSimulationHelper
 except Exception:
     OpenCORSimulationHelper = None
+
+try:
+    from solver_wrappers.casadi_python_solver_helper import SimulationHelper as CasADiPythonSimulationHelper
+except Exception:
+    CasADiPythonSimulationHelper = None
+
 try:
     from mpi4py import MPI
     _MPI_AVAILABLE = True
@@ -35,9 +41,11 @@ def get_simulation_helper(model_path: str = None, solver: str = None,
     cellml_solvers = ['CVODE_opencor', 'CVODE_myokit']
     python_solvers = ['solve_ivp']
     solve_ivp_methods = ['RK45', 'RK23', 'DOP853', 'Radau', 'BDF', 'LSODA', 'RK4', 'forward_euler']
+    casadi_solvers = ['casadi_integrator']
 
     # Determine if this is a Python model
     is_python_model = (model_type == 'python')
+    is_casadi_python_model = (model_type == 'casadi_python')
 
     # Check for explicit solver specification with validation
     if solver in ('CVODE_opencor'):
@@ -60,6 +68,13 @@ def get_simulation_helper(model_path: str = None, solver: str = None,
         if not model_path.endswith('.py'):
             raise ValueError(f"model_path {model_path} does not end with .py, which is required for Python models")
         return PythonSimulationHelper(model_path, dt, sim_time, solver_info, pre_time=pre_time)
+    elif solver in casadi_solvers:
+        if not is_casadi_python_model:
+            raise ValueError(f"Solver {solver} can only be used for CasADi Python models.")
+        if CasADiPythonSimulationHelper is not None:
+            return CasADiPythonSimulationHelper(model_path, dt, sim_time, solver_info, pre_time=pre_time)
+        else:
+            raise RuntimeError("CasADi solver requested but CasADi is not available")
     elif solver is not None:
         # Unknown solver type
         raise ValueError(f"Unknown solver {solver}. Valid options are: {cellml_solvers} for CellML models and {python_solvers} for Python models")
@@ -78,4 +93,5 @@ __all__ = [
     "PythonSimulationHelper",
     "MyokitSimulationHelper",
     "OpenCORSimulationHelper",
+    "CasADiPythonSimulationHelper",
 ]
