@@ -1842,7 +1842,10 @@ class OpencorParamID():
 
     def get_obs_output_dict(self, operands_outputs, get_all_series=False):
         if operands_outputs == None:
-            return None
+            if get_all_series:
+                return None, None
+            else:
+                return None
         obs_const_vec = np.zeros((len(self.obs_info["ground_truth_const"]), ))
         obs_series_list_of_arrays = [None]*len(self.obs_info["ground_truth_series"])
         obs_amp_list_of_arrays = [None]*len(self.obs_info["ground_truth_amp"])
