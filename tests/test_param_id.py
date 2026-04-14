@@ -472,24 +472,10 @@ def test_param_id_calibration_outputs_match_rerun(base_user_inputs, resources_di
         parsed_config = YamlFileParser().parse_user_inputs_file(
             config, obs_path_needed=True, do_generation_with_fit_parameters=False
         )
-        param_id_runner = CVS0DParamID(
-            parsed_config["model_path"],
-            parsed_config["model_type"],
-            parsed_config["param_id_method"],
-            False,
-            parsed_config["file_prefix"],
-            params_for_id_path=parsed_config["params_for_id_path"],
-            param_id_obs_path=parsed_config["param_id_obs_path"],
-            sim_time=parsed_config["sim_time"],
-            pre_time=parsed_config["pre_time"],
-            solver_info=parsed_config["solver_info"],
-            dt=parsed_config["dt"],
-            optimiser_options=parsed_config["optimiser_options"],
-            DEBUG=parsed_config["DEBUG"],
-            param_id_output_dir=parsed_config["param_id_output_dir"],
-            resources_dir=parsed_config["resources_dir"],
-            one_rank=True,
-        )
+        param_id_runner = CVS0DParamID.init_from_dict({
+            **parsed_config,
+            "one_rank": True,
+        })
 
         rerun_cost, _ = param_id_runner.param_id.get_cost_and_obs_from_params(
             best_param_vals, reset=True, only_one_exp=-1
