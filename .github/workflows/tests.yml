@@ -135,7 +135,7 @@ jobs:
 
     - name: Run param_id tests with MPI
       run: |
-        mpiexec -n 2 python -m pytest tests/test_param_id.py -v --tb=short --junitxml=junit-param-id.xml
+        mpiexec -n 2 python -m pytest tests/test_param_id.py -v --with-mpi --tb=short --junitxml=junit-param-id.xml
 
   # Job to run full test suite if OpenCOR is available (optional)
   # This can be enabled if OpenCOR is set up in CI environment
