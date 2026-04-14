@@ -68,6 +68,36 @@ def _write_output_mismatch_artifacts(artifact_dir, exp_idx, key, best_fit_output
         pass
 
 
+def _is_time_like_output_key(key):
+    key = str(key)
+    return (
+        key in {"time", "engine.time", "environment.time"}
+        or key.endswith(".time")
+        or key.endswith(".t")
+    )
+
+
+def _resolve_rerun_key(saved_key, rerun_outputs):
+    """Map saved output keys to rerun keys, allowing time-key aliases only."""
+    if saved_key in rerun_outputs:
+        return saved_key
+
+    if not _is_time_like_output_key(saved_key):
+        return None
+
+    # Prefer the normalized project key when available.
+    preferred = ("environment.time", "engine.time", "time")
+    for key in preferred:
+        if key in rerun_outputs:
+            return key
+
+    time_like_keys = [key for key in rerun_outputs.keys() if _is_time_like_output_key(key)]
+    if len(time_like_keys) == 1:
+        return time_like_keys[0]
+
+    return None
+
+
 @pytest.fixture(scope="function")
 def mpi_comm():
     """Fixture that provides MPI communicator."""
@@ -499,9 +529,10 @@ def test_param_id_calibration_outputs_match_rerun(base_user_inputs, resources_di
             rerun_outputs = param_id_runner.param_id.sim_helper.get_all_results_dict()
 
             for key in saved_outputs.files:
-                assert key in rerun_outputs, f"Missing key '{key}' in rerun outputs for exp {exp_idx}"
+                rerun_key = _resolve_rerun_key(key, rerun_outputs)
+                assert rerun_key is not None, f"Missing key '{key}' in rerun outputs for exp {exp_idx}"
                 saved_arr = np.asarray(saved_outputs[key])
-                rerun_arr = np.asarray(rerun_outputs[key])
+                rerun_arr = np.asarray(rerun_outputs[rerun_key])
                 if saved_arr.shape != rerun_arr.shape or not np.allclose(
                     saved_arr, rerun_arr, rtol=1e-8, atol=1e-10
                 ):

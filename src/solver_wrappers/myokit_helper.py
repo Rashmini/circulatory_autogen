@@ -359,7 +359,45 @@ class SimulationHelper:
         raise RuntimeError("Simulation has not been run yet.")
 
     def _collect_all_results_dict_from_log(self):
-        return {qname: np.asarray(self.last_log[qname]) for qname in self.last_log.keys()}
+        results = {qname: np.asarray(self.last_log[qname]) for qname in self.last_log.keys()}
+        # Keep a stable project-level time key regardless of importer-specific qnames.
+        if "environment.time" not in results:
+            results["environment.time"] = self._get_log_time_series()
+        return results
+
+    def _get_log_time_series(self):
+        """
+        Returns the logged time series from Myokit DataLog using its own time-key
+        abstraction, with fallbacks for compatibility.
+        """
+        if self.last_log is None:
+            raise RuntimeError("No log available")
+
+        # Preferred: use DataLog's configured time key.
+        time_key = None
+        if hasattr(self.last_log, "time_key"):
+            try:
+                time_key = self.last_log.time_key()
+            except Exception:
+                time_key = None
+        if time_key and time_key in self.last_log:
+            return np.asarray(self.last_log[time_key])
+
+        # Secondary: ask DataLog directly for time values.
+        if hasattr(self.last_log, "time"):
+            try:
+                return np.asarray(self.last_log.time())
+            except Exception:
+                pass
+
+        # Final fallback: model-declared bound time variable qname.
+        model_time = self.model.time()
+        if model_time is not None:
+            model_time_qname = model_time.qname()
+            if model_time_qname in self.last_log:
+                return np.asarray(self.last_log[model_time_qname])
+
+        raise RuntimeError("Unable to determine time series key from Myokit log.")
 
     def get_init_param_vals(self, param_names):
         param_init = []

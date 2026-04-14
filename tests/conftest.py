@@ -124,6 +124,9 @@ def pytest_configure(config):
     if src_dir not in sys.path:
         sys.path.insert(0, src_dir)
 
+    # Keep runtime marker registration aligned with pyproject strict markers.
+    config.addinivalue_line("markers", "need_opencor: tests requiring OpenCOR backend")
+    config.addinivalue_line("markers", "solver: solver-focused tests")
     # Ensure pytest-xdist group marker is registered (also in pyproject for strict markers)
     config.addinivalue_line("markers", "xdist_group(name): serialize a group of tests under pytest-xdist")
     config.addinivalue_line("markers", "one_rank_rank(idx): rank assigned to run an autogeneration test")

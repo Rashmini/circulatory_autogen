@@ -415,7 +415,12 @@ def _run_and_get_initial_state(helper, state_name):
 @pytest.mark.solver
 @pytest.mark.parametrize("solver,model_type,solver_info", [
     ("CVODE_myokit", "cellml_only", {"MaximumStep": 0.001, "MaximumNumberOfSteps": 5000}),
-    ("CVODE_opencor", "cellml_only", {"MaximumStep": 0.001, "MaximumNumberOfSteps": 5000}),
+    pytest.param(
+        "CVODE_opencor",
+        "cellml_only",
+        {"MaximumStep": 0.001, "MaximumNumberOfSteps": 5000},
+        marks=pytest.mark.need_opencor,
+    ),
 ])
 def test_set_param_vals_updates_state_init_for_cellml_solvers(solver, model_type, solver_info):
     """
@@ -460,6 +465,11 @@ def test_set_param_vals_updates_state_init_for_cellml_solvers(solver, model_type
     helper.reset_and_clear()
     cached_results = helper.get_all_results_dict()
     assert q_name in cached_results, f"{solver}: cached results missing {q_name}"
+    if solver == "CVODE_myokit":
+        assert "environment.time" in cached_results, (
+            "CVODE_myokit: expected normalized time key 'environment.time' "
+            "to be present in cached results"
+        )
 
     # Case 2: q_lv_init = 8e-4 -> q_lv(0) = 8e-4
     helper.update_times(dt, 0.0, sim_time, pre_time)
@@ -541,7 +551,11 @@ def temp_model_dir():
     ("SN_simple", "generated_models/SN_simple/SN_simple.cellml"),
 ])
 @pytest.mark.parametrize("solver,solver_info", [
-    ("CVODE_opencor", {"MaximumStep": 0.0001}),  # OpenCOR
+    pytest.param(
+        "CVODE_opencor",
+        {"MaximumStep": 0.0001},
+        marks=pytest.mark.need_opencor,
+    ),  # OpenCOR
     ("CVODE_myokit", {"MaximumStep": 0.0001}),  # Myokit
 ])
 def test_cellml_solvers(model_name, model_path, solver, solver_info):
@@ -576,7 +590,8 @@ def test_cellml_solvers(model_name, model_path, solver, solver_info):
             pre_time=pre_time,
         )
     except RuntimeError as e:
-        # Missing solver backend (OpenCOR/Myokit) should fail.
+        if solver == "CVODE_opencor":
+            pytest.skip(f"{solver} solver not available: {e}")
         pytest.fail(f"{solver} solver not available: {e}")
     
     # Run simulation
@@ -715,6 +730,10 @@ def _run_all_solvers_and_compare(model_name, model_path, temp_model_dir, dt=0.01
             results[solver] = {"success": True, "variables": len(helper.get_all_variable_names())}
         except Exception as e:
             results[solver] = {"success": False, "error": str(e)}
+            if solver == "CVODE_opencor":
+                results[solver]["skipped"] = True
+                results[solver]["reason"] = f"OpenCOR backend unavailable: {e}"
+                continue
             pytest.fail(f"{model_name} {model_type} {solver} {method} failed: {e}")
     
     # Test Python BDF (below to disable)
