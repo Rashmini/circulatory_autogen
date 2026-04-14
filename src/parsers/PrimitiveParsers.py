@@ -945,7 +945,8 @@ class ObsAndParamDataParser(object):
                 "cost_type": {"types": (str,), "default": "MSE"},
                 "obs_type": {"types": (str,), "default": None},
                 "frequencies": {"types": (list, tuple, np.ndarray, int, float, np.integer, np.floating), "default": None},
-                "phase_weight": {"types": (int, float, np.integer, np.floating, list, np.ndarray), "default": None},
+                # If omitted, phase weighting should follow the same weighting as amplitude.
+                "phase_weight": {"types": (int, float, np.integer, np.floating, list, np.ndarray), "default": lambda df: df["weight"]},
                 "phase": {"types": (list, tuple, np.ndarray, int, float, np.integer, np.floating), "default": None},
                 "prob_dist_params": {"types": (dict,), "default": None},
                 "obs_dt": {"types": (int, float, np.integer, np.floating), "default": None},
@@ -1094,7 +1095,10 @@ class ObsAndParamDataParser(object):
         obs_info["weight_amp_vec"] = weights[data_types == "frequency"]
         obs_info["weight_prob_dist_vec"] = weights[data_types == "prob_dist"]
 
-        phase_weights = gt_df.get("phase_weight", pd.Series([1] * N))
+        phase_weights = gt_df.apply(
+            lambda row: row["phase_weight"] if row.get("phase_weight") is not None else row["weight"],
+            axis=1,
+        )
         obs_info["weight_phase_vec"] = phase_weights[data_types == "frequency"].to_numpy()
 
         obs_info["cost_type"] = [gt_df.iloc[II].get("cost_type", "MSE") for II in range(N)]
@@ -1289,7 +1293,14 @@ class ObsAndParamDataParser(object):
                 # Handle phase map separately
                 freq_mask = mask & (df["data_type"] == "frequency")
                 # Use "phase_weight" if present, otherwise use "weight", or 0.0
-                phase_weights = np.where(freq_mask, df.apply(lambda row: row.get("phase_weight", row["weight"]), axis=1), 0.0)
+                phase_weights = np.where(
+                    freq_mask,
+                    df.apply(
+                        lambda row: row["phase_weight"] if row.get("phase_weight") is not None else row["weight"],
+                        axis=1,
+                    ),
+                    0.0,
+                )
                 phase_map[exp_idx][this_sub_idx] = phase_weights
 
         # --- Store Final Maps in protocol_info ---
