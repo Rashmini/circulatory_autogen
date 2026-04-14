@@ -107,6 +107,22 @@ def mpi_comm():
     return comm
 
 
+def _ensure_cellml_model_generated(config, mpi_comm):
+    """
+    Ensure generated CellML exists before run_param_id.
+
+    CI checkouts omit gitignored generated_models/; local runs may already have artifacts.
+    """
+    if config.get("model_type") != "cellml_only":
+        return
+    rank = mpi_comm.Get_rank()
+    if rank == 0:
+        success = generate_with_new_architecture(False, config)
+        prefix = config.get("file_prefix", "<unknown>")
+        assert success, f"CellML autogeneration failed for {prefix}"
+    mpi_comm.Barrier()
+
+
 @pytest.mark.integration
 @pytest.mark.slow
 @pytest.mark.mpi
@@ -209,7 +225,9 @@ def test_param_id_3compartment_succeeds(base_user_inputs, resources_dir, temp_ou
         'param_id_output_dir': temp_output_dir,
         'debug_optimiser_options': {'num_calls_to_function': 60, 'max_patience': 500},
     })
-    
+
+    _ensure_cellml_model_generated(config, mpi_comm)
+
     # Run parameter identification
     run_param_id(config)
     
@@ -262,7 +280,9 @@ def test_param_id_3compartment_cmaes_succeeds(base_user_inputs, resources_dir, t
         'param_id_output_dir': temp_output_dir,
         'debug_optimiser_options': {'num_calls_to_function': 20, 'max_patience': 20},
     })
-    
+
+    _ensure_cellml_model_generated(config, mpi_comm)
+
     # Run parameter identification
     run_param_id(config)
     
@@ -387,7 +407,9 @@ def test_param_id_test_fft_cost_is_zero(base_user_inputs, resources_dir, temp_ou
         'param_id_output_dir': temp_output_dir,
         'debug_optimiser_options': {'num_calls_to_function': 2000, 'max_patience': 500},  
     })
-    
+
+    _ensure_cellml_model_generated(config, mpi_comm)
+
     # Run parameter identification
     run_param_id(config)
     
@@ -590,7 +612,9 @@ def test_param_id_simple_physiological_succeeds(base_user_inputs, resources_dir,
         'param_id_output_dir': temp_output_dir,
         'debug_optimiser_options': {'num_calls_to_function': 60, 'max_patience': 50},
     })
-    
+
+    _ensure_cellml_model_generated(config, mpi_comm)
+
     # Run parameter identification
     run_param_id(config)
     
@@ -604,6 +628,11 @@ def test_param_id_simple_physiological_succeeds(base_user_inputs, resources_dir,
     
     mpi_comm.Barrier()
 
+
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS") == "true",
+    reason="compare_optimisers is heavy; run locally only (skipped on GitHub Actions)",
+)
 @pytest.mark.integration
 @pytest.mark.slow
 @pytest.mark.mpi
@@ -648,7 +677,9 @@ def test_compare_optimisers(base_user_inputs, resources_dir, temp_output_dir, mp
         'param_id_output_dir': temp_output_dir,
         'debug_optimiser_options': {'num_calls_to_function': 10000, 'max_patience': 500},
     })
-    
+
+    _ensure_cellml_model_generated(config, mpi_comm)
+
     # Create comparison object with full number of calls for testing
     comparison = OptimiserComparison(config, methods=['genetic_algorithm', 'CMA-ES'], num_calls=10000)
     
