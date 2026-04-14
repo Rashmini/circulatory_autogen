@@ -188,49 +188,37 @@ class CVS0DCellMLGenerator(object):
                     "but it is recommended to fix them.")
         
 
-        print('Testing to see if model opens in OpenCOR')
-        opencor_available = True
+        print('Testing to see if model runs with Myokit')
         try:
-            import opencor as oc
-        except:
-            opencor_available = False
-            pass
-        if opencor_available:
-            sim = oc.open_simulation(os.path.join(self.output_dir, f'{self.file_prefix}.cellml'))
-            if sim.valid():
-                print('Model generation has been successful.')
-                return True
-            else:
-                if self.all_parameters_defined:
-                    print('The OpenCOR model is not yet working, The reason for this is unknown. \n'
-                          'Open the model in OpenCor and check the error in the simulation environment \n'
-                          'for further error info. \n')
-                    return False
-                else:
-                    print('The OpenCOR model is not yet working because all parameters have not been given values, \n'
-                          f'Enter the values in '
-                          f'{os.path.join(self.resources_dir, f"{self.file_prefix}_parameters_unfinished.csv")}')
-                    return False
+            from solver_wrappers import get_simulation_helper
 
-        else:
-            print('Model generation is complete but OpenCOR could not be opened to test the model. \n'
-                  ' We generate the model in python from cellml and check it can be run for a small \n'
-                  'amount of time.')
-            from generators.PythonGenerator import PythonGenerator
-            from solver_wrappers.python_solver_helper import SimulationHelper as PythonSimulationHelper
-            gen = PythonGenerator(os.path.join(self.output_dir, f'{self.file_prefix}.cellml'), output_dir=self.output_dir)
-            gen.generate()
-            sim_helper = PythonSimulationHelper(os.path.join(self.output_dir, f'{self.file_prefix}.py'), dt=0.00001, sim_time=0.00001)
-            sim_helper.set_solve_ivp_method('BDF')
+            cellml_path = os.path.join(self.output_dir, f'{self.file_prefix}.cellml')
+            solver_info = {'MaximumStep': 0.00001, 'MaximumNumberOfSteps': 5000}
+            sim_helper = get_simulation_helper(
+                model_path=cellml_path,
+                model_type='cellml_only',
+                solver='CVODE_myokit',
+                dt=0.00001,
+                sim_time=0.00001,
+                solver_info=solver_info,
+                pre_time=0.0,
+            )
             success = sim_helper.run()
-
             if success:
                 print('Model generation has been successful.')
                 return True
-            else:
-                print('Model generation has failed. Or the simulation fails when trying to simulate'
-                      'in Python')
+        except Exception as e:
+            if self.all_parameters_defined:
+                print('The Myokit validation run failed for the generated model. \n'
+                      f'Error: {e}\n')
                 return False
+            print('The Myokit validation run failed because all parameters have not been given values, \n'
+                  f'Enter the values in '
+                  f'{os.path.join(self.resources_dir, f"{self.file_prefix}_parameters_unfinished.csv")}')
+            return False
+
+        print('Model generation has failed. Or the simulation fails when trying to simulate in Myokit')
+        return False
 
     def __adjust_units_import_line(self, line):
         if 'import xlink:href="units.cellml"' in line:
