@@ -31,7 +31,7 @@ jobs:
     - name: Install MPI
       run: |
         sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin
+        sudo apt-get install -y libopenmpi-dev openmpi-bin libsundials-dev build-essential
     
     - name: Run tests (Myokit-first, skip OpenCOR-only)
       id: pytest
@@ -134,7 +134,7 @@ jobs:
     - name: Install MPI
       run: |
         sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin
+        sudo apt-get install -y libopenmpi-dev openmpi-bin libsundials-dev build-essential
     
     - name: Download and setup OpenCOR
       run: |
