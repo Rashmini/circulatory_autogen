@@ -7,11 +7,95 @@ import os
 import pytest
 import numpy as np
 from mpi4py import MPI
+from param_id.paramID import CVS0DParamID
+from parsers.PrimitiveParsers import YamlFileParser
 
 from scripts.script_generate_with_new_architecture import generate_with_new_architecture
 from scripts.param_id_run_script import run_param_id
 from scripts.plot_param_id_script import plot_param_id
 from scripts.example_format_obs_data_json_file import example_format_obs_data_json_file
+
+
+def _write_output_mismatch_artifacts(artifact_dir, exp_idx, key, best_fit_output, rerun_output):
+    """Save compact diagnostics when saved and rerun outputs diverge."""
+    os.makedirs(artifact_dir, exist_ok=True)
+
+    best_arr = np.asarray(best_fit_output)
+    rerun_arr = np.asarray(rerun_output)
+    if best_arr.ndim == 0 or rerun_arr.ndim == 0:
+        n = 0
+    else:
+        n = int(min(best_arr.shape[0], rerun_arr.shape[0]))
+
+    diff = best_arr[:n] - rerun_arr[:n] if n > 0 else np.array([])
+    rel = np.abs(diff) / (np.abs(best_arr[:n]) + 1e-12) if n > 0 else np.array([])
+
+    filename_key = key.replace("/", "_")
+    np.savez(
+        os.path.join(artifact_dir, f"exp_{exp_idx}_{filename_key}_diagnostics.npz"),
+        best=best_arr,
+        rerun=rerun_arr,
+        diff=diff,
+        rel=rel,
+    )
+
+    if n == 0:
+        return
+
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        show_n = min(n, 400)
+        x = np.arange(show_n)
+        fig, axs = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+        axs[0].plot(x, best_arr[:show_n], label="saved_best_fit")
+        axs[0].plot(x, rerun_arr[:show_n], label="rerun")
+        axs[0].set_ylabel("value")
+        axs[0].legend()
+        axs[0].set_title(f"exp={exp_idx}, key={key}")
+
+        axs[1].plot(x, diff[:show_n], label="difference")
+        axs[1].set_xlabel("index")
+        axs[1].set_ylabel("saved-rerun")
+        axs[1].legend()
+        fig.tight_layout()
+        fig.savefig(os.path.join(artifact_dir, f"exp_{exp_idx}_{filename_key}_diagnostics.png"))
+        plt.close(fig)
+    except Exception:
+        # Plotting diagnostics are best-effort only.
+        pass
+
+
+def _is_time_like_output_key(key):
+    key = str(key)
+    return (
+        key in {"time", "engine.time", "environment.time"}
+        or key.endswith(".time")
+        or key.endswith(".t")
+    )
+
+
+def _resolve_rerun_key(saved_key, rerun_outputs):
+    """Map saved output keys to rerun keys, allowing time-key aliases only."""
+    if saved_key in rerun_outputs:
+        return saved_key
+
+    if not _is_time_like_output_key(saved_key):
+        return None
+
+    # Prefer the normalized project key when available.
+    preferred = ("environment.time", "engine.time", "time")
+    for key in preferred:
+        if key in rerun_outputs:
+            return key
+
+    time_like_keys = [key for key in rerun_outputs.keys() if _is_time_like_output_key(key)]
+    if len(time_like_keys) == 1:
+        return time_like_keys[0]
+
+    return None
 
 
 @pytest.fixture(scope="function")
@@ -256,6 +340,8 @@ def test_param_id_3compartment_python_succeeds(base_user_inputs, resources_dir, 
             f"{config['param_id_method']}_{config['file_prefix']}_3compartment_obs_data"
         )
         assert os.path.exists(output_dir), f"Output directory should exist: {output_dir}"
+    
+        plot_param_id(config, generate=True)
 
     mpi_comm.Barrier()
 
@@ -345,6 +431,124 @@ def test_param_id_test_fft_cost_is_zero(base_user_inputs, resources_dir, temp_ou
         assert not np.isnan(covariance_matrix).any(), "Covariance matrix should not contain NaN values"
         assert not np.isinf(covariance_matrix).any(), "Covariance matrix should not contain Inf values"
         assert covariance_matrix.shape[0] == covariance_matrix.shape[1], "Covariance matrix should be square"
+
+
+@pytest.mark.integration
+@pytest.mark.slow
+@pytest.mark.mpi
+def test_param_id_calibration_outputs_match_rerun(base_user_inputs, resources_dir, temp_output_dir, mpi_comm):
+    """
+    Regression test:
+    - Run short GA calibration on a simple model with state-init dependent constants.
+    - Verify saved best_cost equals fresh rerun cost with best params.
+    - Verify saved per-experiment all_outputs match fresh reruns.
+    """
+    rank = mpi_comm.Get_rank()
+
+    config = base_user_inputs.copy()
+    config.update({
+        "file_prefix": "3compartment",
+        "input_param_file": "3compartment_parameters.csv",
+        "params_for_id_file": "3compartment_q_lv_only_params_for_id.csv",
+        "model_type": "cellml_only",
+        "solver": "CVODE_myokit",
+        "param_id_method": "genetic_algorithm",
+        "pre_time": 0.0,
+        "sim_time": 0.2,
+        "dt": 0.01,
+        "DEBUG": True,
+        "do_mcmc": False,
+        "plot_predictions": False,
+        "do_ia": False,
+        "solver_info": {
+            "MaximumStep": 0.001,
+            "MaximumNumberOfSteps": 5000,
+        },
+        "param_id_obs_path": os.path.join(resources_dir, "3compartment_obs_data.json"),
+        "param_id_output_dir": temp_output_dir,
+        "optimiser_options": {
+            "num_calls_to_function": 56,
+            "max_patience": 8,
+            "cost_convergence": 1e-8,
+        },
+        "debug_optimiser_options": {
+            "num_calls_to_function": 56,
+            "max_patience": 8,
+            "cost_convergence": 1e-8,
+        },
+    })
+
+    if rank == 0:
+        success = generate_with_new_architecture(False, config)
+        assert success, "Autogeneration should succeed for 3compartment"
+
+    mpi_comm.Barrier()
+    run_param_id(config)
+    mpi_comm.Barrier()
+
+    if rank == 0:
+        output_dir = os.path.join(
+            temp_output_dir,
+            "genetic_algorithm_3compartment_3compartment_obs_data",
+        )
+        best_cost_path = os.path.join(output_dir, "best_cost.npy")
+        best_param_path = os.path.join(output_dir, "best_param_vals.npy")
+        assert os.path.exists(best_cost_path), f"Missing best_cost file: {best_cost_path}"
+        assert os.path.exists(best_param_path), f"Missing best_param_vals file: {best_param_path}"
+
+        best_cost = float(np.load(best_cost_path))
+        best_param_vals = np.load(best_param_path)
+
+        parsed_config = YamlFileParser().parse_user_inputs_file(
+            config, obs_path_needed=True, do_generation_with_fit_parameters=False
+        )
+        param_id_runner = CVS0DParamID.init_from_dict({
+            **parsed_config,
+            "one_rank": True,
+        })
+
+        rerun_cost, _ = param_id_runner.param_id.get_cost_and_obs_from_params(
+            best_param_vals, reset=True, only_one_exp=-1
+        )
+        assert np.isclose(rerun_cost, best_cost, rtol=0.0, atol=1e-8), (
+            f"Calibration cost mismatch: saved best_cost={best_cost}, rerun_cost={rerun_cost}"
+        )
+
+        num_exp = param_id_runner.param_id.protocol_info["num_experiments"]
+        mismatch_artifact_dir = os.path.join(output_dir, "debug_output_mismatch")
+        mismatches = []
+
+        for exp_idx in range(num_exp):
+            saved_npz_path = os.path.join(output_dir, f"all_outputs_with_best_param_vals_exp_{exp_idx}.npz")
+            assert os.path.exists(saved_npz_path), f"Missing saved outputs file: {saved_npz_path}"
+            saved_outputs = np.load(saved_npz_path)
+
+            param_id_runner.param_id.get_cost_and_obs_from_params(
+                best_param_vals, reset=True, only_one_exp=exp_idx
+            )
+            rerun_outputs = param_id_runner.param_id.sim_helper.get_all_results_dict()
+
+            for key in saved_outputs.files:
+                rerun_key = _resolve_rerun_key(key, rerun_outputs)
+                assert rerun_key is not None, f"Missing key '{key}' in rerun outputs for exp {exp_idx}"
+                saved_arr = np.asarray(saved_outputs[key])
+                rerun_arr = np.asarray(rerun_outputs[rerun_key])
+                if saved_arr.shape != rerun_arr.shape or not np.allclose(
+                    saved_arr, rerun_arr, rtol=1e-8, atol=1e-10
+                ):
+                    mismatches.append((exp_idx, key, saved_arr, rerun_arr))
+                    _write_output_mismatch_artifacts(
+                        mismatch_artifact_dir, exp_idx, key, saved_arr, rerun_arr
+                    )
+
+        param_id_runner.close_simulation()
+
+        assert not mismatches, (
+            f"Found {len(mismatches)} saved-vs-rerun output mismatches. "
+            f"Diagnostics written to: {mismatch_artifact_dir}"
+        )
+
+    mpi_comm.Barrier()
 
 
 @pytest.mark.integration

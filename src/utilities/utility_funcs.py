@@ -149,7 +149,8 @@ def change_parameter_values_and_save(cellml_file, parameter_names, parameter_val
             if comp.hasVariable(name_mod):
                 var = comp.variable(name_mod)
                 if var.initialValue() == '':
-                    print(f"Variable '{name_mod}' does not have an initial value in this module, probably defined in another module, such as parameters.")
+                    # print(f"Variable '{name_mod}' does not have an initial value in this module, probably defined in another module, such as parameters.")
+                    pass
                 else:
                     var.setInitialValue(str(new_val))
                     found = True

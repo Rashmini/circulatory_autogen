@@ -24,7 +24,7 @@ def run_SA(inp_data_dict=None):
     # SA_agent = SensitivityAnalysis(model_path=model_path, model_type=model_type, file_name_prefix=file_name_prefix,
     #                                DEBUG=DEBUG, model_out_names=model_out_names, solver_info=solver_info, dt=dt, 
     #                                ga_options=optimiser_options, param_id_obs_path=param_id_obs_path, params_for_id_path=params_for_id_path)
-    SA_agent = SensitivityAnalysis.from_dict(inp_data_dict)
+    SA_agent = SensitivityAnalysis.init_from_dict(inp_data_dict)
     SA_agent.run_sensitivity_analysis()
 
 if __name__ == '__main__':

@@ -1,5 +1,11 @@
 # Getting Started
 
+## Prerequisites
+
+- OpenCOR >0.8.1 installed locally or available on your HPC.
+- Git installed to clone the repository.
+- MPI installed if you plan to run parameter identification or sensitivity analysis in parallel (see notes below).
+
 ## Initialising and Startup
 
 **1. Install OpenCOR**
@@ -46,9 +52,9 @@ Also, the OpenCOR directory is needed for installing the necessary python librar
 
 ## Python and Libraries Installation
 
-To run openCOR, you need to use the Python version that is shipped with openCOR. 
+To run OpenCOR-based workflows, you must use the Python version shipped with OpenCOR.
 
-To install required python packages, navigate to `[OpenCOR_dir]` directory and run the below command.
+To install required Python packages, navigate to `[OpenCOR_dir]` and run:
 
 !!! Note
     === "Linux"
@@ -67,29 +73,19 @@ To install required python packages, navigate to `[OpenCOR_dir]` directory and r
         ```
 
 !!! note
-    **Required packages for autogeneration**:
-    pandas pyyaml rdflib
-
-    **Recommended (but not required) packages for autogeneration (allows for better error checking)**:
-    libcellml
-
-    **Required packages for parameter identification**:
-    mpi4py sympy
-
-    **Required packages for mcmc bayesian identification**:
-    emcee corner schwimmbad tqdm statsmodels
+    The repository includes a consolidated dependency list in `requirements.txt`. Use the OS-specific command above and replace `<packagename>` with:
     
-    **Required packages for sensitivity analysis **:
-    SALib==1.5.1 seaborn
+    ```
+    -r /path/to/circulatory_autogen/requirements.txt
+    ```
     
-    **Required packages for CMAES**:
-    nevergrad
+    If you prefer manual installs, the key packages include:
     
-    **Required packages for testing**:
-    pytest
-
-    **Required for some utilities**:
-    ruamel.yaml
+    - Autogeneration: `pandas`, `pyyaml`, `rdflib` `libcellml`. 
+    - Parameter identification: `mpi4py`, `sympy`, `emcee`, `corner`, `schwimmbad`, `tqdm`, `statsmodels`.
+    - Sensitivity analysis: `SALib`, `seaborn`.
+    - CMA-ES optimisation: `nevergrad`.
+    - Utilities/tests: `ruamel.yaml`, `pytest`.
 
 ## Setting up your python path
 
@@ -109,9 +105,11 @@ Open `[project_dir]/user_run_files/opencor_pythonshell_path.sh` file and change 
         ```
 
 !!! Note
-    This tutorial assumes you will be running .sh commands (if you're on Windows, you should download gitbash from [here](https://git-scm.com/downloads) so that you can run the bash scripts). 
+    This tutorial assumes you will be running `.sh` commands (if you're on Windows, use Git Bash). 
 
-    However, alternatively (**especially if you want to debug**), you can use an IDE of your choice, set the python path equal to the `opencor_pythonshell_path` and run the python scripts that are called to within the bash scripts (open the relevent .sh file to find the corresponding python script name). The scripts are located at `project_dir]/src/scripts/`
+    Alternatively (**especially for debugging**), you can run the Python scripts directly. Use the OpenCOR Python interpreter (set in `opencor_pythonshell_path.sh`) and execute the matching script in `project_dir/src/scripts/`. The `.sh` files in `user_run_files` show the exact script each command runs.
+
+    Option! For a more python-centric tutorial, see /tutorial/interactive/generate_and_calibrate.ipynb tutorial which shows how to run everything from python without setting up input files.
 
 !!! warning
     Installing **mpi4py** requires mpi to be available. Therefore, the following lines may be required to install the mpi software on your computer.
@@ -121,6 +119,7 @@ Open `[project_dir]/user_run_files/opencor_pythonshell_path.sh` file and change 
         sudo apt install libopenmpi-dev
         sudo apt install libffi7
         ```
+:w
 
     === "Mac"
         ```
@@ -156,7 +155,10 @@ Open `[project_dir]/user_run_files/opencor_pythonshell_path.sh` file and change 
     This would let the system know where to look for libcrypto.so.3 when loading the ssl module.
 
 
-!!! info "Changes to be made"
-    Currently **vessels** is used interchangeabley with **modules**. This will be changed to use **modules** in all instances, as the project now allows all types of modules, not just vessels.
+## Expected outcome
 
-    The connections between terminals and the venous system is hardcoded, as a terminal_venous_connection has to be made to sum up the flows and get an avergae concentration. This is being improved in development.
+You should now have:
+
+- A working OpenCOR Python environment with project dependencies installed.
+- A clone of the repository ready for running the tutorial scripts.
+- `opencor_pythonshell_path.sh` configured to your OpenCOR installation.

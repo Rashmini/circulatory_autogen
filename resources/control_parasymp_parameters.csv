@@ -37,6 +37,7 @@ P_ws,J_per_m3,6266.15,WestPulmonaryPhysiology2008
 flag_RR_control_lung,dimensionless,1.0,Albanese2016
 flag_P_mus_control_lung,dimensionless,1.0,Albanese2016
 P_mus_min_lung,J_per_m3,-980,Albanese2016_-980_in_this_formulation_is_-490_in_Albanese
+alpha_P_mus_lung,J_per_m3,1.0,TO_BE_COUPLED_TO_CONTROL
 P_plEE_lung,J_per_m3,-490,WestPulmonaryPhysiology2008
 q_l_us_lung,m3,3.44e-05,YasuhiroFukui1972
 q_t_us_lung,m3,6.63e-06,YasuhiroFukui1972
@@ -66,6 +67,7 @@ q_us_0_pvn,m3,0,user_defined
 Delta_q_us_pvn,m3,0,user_defined
 Delta_C_pvn,m6_per_J,0.0,user_defined
 rho,Js2_per_m5,1050,known
+u_intraThor_heart,J_per_m3,0.0,TO_BE_COUPLED_TO_RESP
 T,second,1,defined_by_user
 T_min,second,0.25,defined_by_user
 q_ra_us,m3,4.00e-06,Korakianitis_2006_Table_1

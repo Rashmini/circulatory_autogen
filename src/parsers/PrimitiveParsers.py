@@ -12,15 +12,19 @@ import csv
 import json
 import copy
 import yaml
+try:
+    from ruamel.yaml.scalarfloat import ScalarFloat
+except Exception:
+    ScalarFloat = None
 import re
-try: 
+
+try:
     from mpi4py import MPI
+    mpi_available = True
+    rank = MPI.COMM_WORLD.Get_rank()
 except:
     mpi_available = False
     rank=0
-else:
-    mpi_available = True
-    rank = MPI.COMM_WORLD.Get_rank()
 
 root_dir = os.path.join(os.path.dirname(__file__), '../..')
 sys.path.append(os.path.join(root_dir, 'src'))
@@ -123,6 +127,12 @@ class YamlFileParser(object):
         else:
             file_prefix = inp_data_dict['file_prefix']
 
+        if 'couple_to_1d' not in inp_data_dict.keys():
+            inp_data_dict['couple_to_1d'] = False
+        
+        if 'param_id_method' not in inp_data_dict.keys():
+            inp_data_dict['param_id_method'] = 'genetic_algorithm'
+
         # overwrite dir paths if set in user_inputs.yaml
         if "resources_dir" in inp_data_dict.keys():
             inp_data_dict['resources_dir'] = os.path.join(user_files_dir, inp_data_dict['resources_dir'])
@@ -197,6 +207,8 @@ class YamlFileParser(object):
         if 'dt' not in inp_data_dict.keys():
             inp_data_dict['dt'] = 0.01
         else:
+            if ScalarFloat is not None and isinstance(inp_data_dict['dt'], ScalarFloat):
+                inp_data_dict['dt'] = float(inp_data_dict['dt'])
             if type(inp_data_dict['dt']) != float:
                 print(f'dt must be a float, but is {type(inp_data_dict["dt"])}')
                 exit()
@@ -204,21 +216,36 @@ class YamlFileParser(object):
         if 'pre_time' in inp_data_dict.keys():
             inp_data_dict['pre_time'] = inp_data_dict['pre_time']
         else:
-            inp_data_dict['pre_time'] = None
+            inp_data_dict['pre_time'] = 0.0
+
         if 'sim_time' in inp_data_dict.keys():
             inp_data_dict['sim_time'] = inp_data_dict['sim_time']
         else:
+            print(f'sim_time not found in inp_data_dict, setting to None so it can be set in protocol_info')
             inp_data_dict['sim_time'] = None
 
         # Parse and validate the solver parameter
-        # Supported solvers: CVODE (OpenCOR), CVODE_myokit (Myokit), or solve_ivp methods (RK45, RK4, etc.)
+        # Supported solvers: CVODE_opencor (OpenCOR), CVODE_myokit (Myokit), or solve_ivp 
+        
+        valid_cellml_solvers = ['CVODE_opencor', 'CVODE_myokit']
+        valid_cellml_methods = ['CVODE']
+        valid_cpp_solvers = ['CVODE', 'RK4', 'PETSC'] # TODO should this be different to methods?
+        valid_cpp_methods = ['CVODE', 'RK4', 'PETSC']
+        # Common solve_ivp methods (add more as needed)
+        valid_python_solvers = ['solve_ivp']
+        valid_solve_ivp_methods = ['RK45', 'RK23', 'DOP853', 'Radau', 'BDF', 'LSODA', 'forward_euler']
+
         solver_name = inp_data_dict.get('solver_info', {}).get('solver')
         if solver_name is None:
             solver_name = inp_data_dict.get('solver')
+        
+        # Backward compatibility: 
+        if solver_name == 'CVODE':
+            solver_name = 'CVODE_myokit' # default to CVODE_myokit for cellml models
 
         if solver_name is None:
             if inp_data_dict.get('model_type') == 'cellml_only':
-                solver_name = 'CVODE'
+                solver_name = 'CVODE_opencor'
             elif inp_data_dict.get('model_type') == 'python':
                 solver_name = 'solve_ivp'
             elif inp_data_dict.get('model_type') == 'cpp':
@@ -227,7 +254,9 @@ class YamlFileParser(object):
                 print(f'Invalid model type: {inp_data_dict.get("model_type")}')
                 exit()
         else:
-            if solver_name not in ['CVODE', 'CVODE_myokit', 'solve_ivp']:
+            if (solver_name not in valid_cellml_solvers and
+                solver_name not in valid_cpp_solvers and
+                solver_name not in valid_python_solvers):
                 print(f'Invalid solver: {solver_name}')
                 exit()
         
@@ -235,12 +264,35 @@ class YamlFileParser(object):
         if 'solver_info' not in inp_data_dict.keys(): 
             inp_data_dict['solver_info'] = get_solver_info_default(inp_data_dict['model_type'])
         else:
-            if 'MaximumStep' not in inp_data_dict['solver_info'].keys():
-                inp_data_dict['solver_info']['MaximumStep'] = get_solver_info_default(inp_data_dict['model_type'])['MaximumStep']
             if 'MaximumNumberOfSteps' not in inp_data_dict['solver_info'].keys():
                 inp_data_dict['solver_info']['MaximumNumberOfSteps'] = get_solver_info_default(inp_data_dict['model_type'])['MaximumNumberOfSteps']
         if 'solver' not in inp_data_dict['solver_info'].keys():
             inp_data_dict['solver_info']['solver'] = solver_name
+        elif inp_data_dict.get('model_type') == 'cpp':
+            if solver_name.startswith('RK4'):
+                inp_data_dict['solver_info']['solver'] = 'RK4'
+                solver_name = 'RK4'
+            elif solver_name.startswith('CVODE'):
+                inp_data_dict['solver_info']['solver'] = 'CVODE'
+                solver_name = 'CVODE'
+            elif solver_name.startswith('PETSC'):
+                inp_data_dict['solver_info']['solver'] = 'PETSC'
+                solver_name = 'PETSC'
+
+        solver_info = get_solver_info_default(inp_data_dict['model_type'])
+        # overwrite with user-provided solver_info
+        for key, value in inp_data_dict['solver_info'].items():
+            solver_info[key] = value
+        
+        dt_solver = solver_info.get('dt_solver')
+        if dt_solver is None:
+            dt_solver = solver_info.get('MaximumStep')
+        if dt_solver is not None:
+            solver_info['dt_solver'] = dt_solver
+        if solver_info.get('solver', '').startswith('CVODE') and dt_solver is not None:
+            solver_info['MaximumStep'] = dt_solver
+
+        inp_data_dict['solver_info'] = solver_info
 
         if 'solver' in inp_data_dict:
             del inp_data_dict['solver']
@@ -248,25 +300,42 @@ class YamlFileParser(object):
         if 'method' in inp_data_dict.get('solver_info', {}):
             solver_method = inp_data_dict['solver_info']['method']
         else:
-            if solver_name.startswith('CVODE'):
-                solver_method = 'CVODE'
-                inp_data_dict['solver_info']['method'] = solver_method
+            if inp_data_dict.get('model_type') == 'cpp':
+                if solver_name.startswith('CVODE'):
+                    solver_method = 'CVODE'
+                    inp_data_dict['solver_info']['method'] = solver_method
+                elif solver_name.startswith('RK4'):
+                    solver_method = 'RK4'
+                    inp_data_dict['solver_info']['method'] = solver_method
+                elif solver_name.startswith('PETSC'):
+                    solver_method = 'PETSC'
+                    inp_data_dict['solver_info']['method'] = solver_method # TODO Bea: add specific solver to be used within PETSC (CN / BDF1 / BDF2 / ...)
+                else:
+                    print(f'solver set {solver_name} not compatible with model_type cpp : change this in the user_inputs.yaml file')
             else:
-                print('method not set in solver_options, which should be set for solver solve_ivp,'
-                      'using default method RK45')
-                solver_method = 'RK45'
-                inp_data_dict['solver_info']['method'] = solver_method
+                if solver_name.startswith('CVODE'):
+                    solver_method = 'CVODE'
+                    inp_data_dict['solver_info']['method'] = solver_method
+                else:
+                    print('method not set in solver_options, which should be set for solver solve_ivp,'
+                        'using default method RK45')
+                    solver_method = 'RK45'
+                    inp_data_dict['solver_info']['method'] = solver_method
 
         # Validate solver value
-        valid_cellml_solvers = ['CVODE', 'CVODE_myokit']
-        # Common solve_ivp methods (add more as needed)
-        valid_python_solvers = ['solve_ivp']
-        valid_solve_ivp_methods = ['RK45', 'RK23', 'DOP853', 'Radau', 'BDF', 'LSODA', 'forward_euler']
+        # valid_cellml_solvers = ['CVODE', 'CVODE_myokit']
+        # valid_cpp_solvers = ['CVODE', 'RK4', 'PETSC']
+        # # Common solve_ivp methods (add more as needed)
+        # valid_python_solvers = ['solve_ivp']
+        # valid_solve_ivp_methods = ['RK45', 'RK23', 'DOP853', 'Radau', 'BDF', 'LSODA', 'forward_euler']
 
-        if solver_name not in valid_cellml_solvers and solver_name not in valid_python_solvers:
+        if (solver_name not in valid_cellml_solvers 
+            and solver_name not in valid_python_solvers
+            and solver_name not in valid_cpp_solvers):
             print(f'Invalid solver: {solver_name}')
             print(f'Valid CellML solvers: {valid_cellml_solvers}')
             print(f'Valid Python solvers: {valid_python_solvers}')
+            print(f'Valid Cpp solvers: {valid_cpp_solvers}')
             exit()
         
         
@@ -281,8 +350,20 @@ class YamlFileParser(object):
         if solver_method in valid_solve_ivp_methods:
             if inp_data_dict.get('model_type') not in ['python', None]:
                 print(f'solve_ivp method {solver_method} requires model_type to be "python"')
-                print('Use CVODE or CVODE_myokit for CellML models')
+                print('Use CVODE_opencor (or legacy CVODE) or CVODE_myokit for CellML models')
+                print('Use CVODE or RK4 or PETSC for Cpp models')
                 exit()
+
+        if solver_name in valid_cellml_solvers and solver_method not in valid_cellml_methods:
+            print(f'solver method {solver_method} not compatible with solver {solver_name}, use {valid_cellml_methods} for CellML models')
+            exit()
+        
+        if solver_name in valid_cpp_solvers and solver_method not in valid_cpp_methods:
+            print(f'solver method {solver_method} not compatible with solver {solver_name}, use {valid_cpp_methods} for Cpp models')
+            exit()
+        if solver_name in valid_python_solvers and solver_method not in valid_solve_ivp_methods:
+            print(f'solver method {solver_method} not compatible with solver {solver_name}, use {valid_solve_ivp_methods} for Python models')
+            exit()
 
         if 'DEBUG' in inp_data_dict.keys(): 
             if inp_data_dict['DEBUG']:
@@ -397,41 +478,62 @@ class YamlFileParser(object):
                         inp_data_dict['optimiser_options'][key] = value
         
         # Handle debug_optimiser_options (new preferred way)
-        # If provided, merge them into optimiser_options and allow overrides
-        if 'debug_optimiser_options' in inp_data_dict.keys() and inp_data_dict['debug_optimiser_options'] is not None:
-            debug_opts = inp_data_dict['debug_optimiser_options']
-            if isinstance(debug_opts, dict):
-                for key, value in debug_opts.items():
-                    if key in inp_data_dict['optimiser_options']:
-                        if inp_data_dict['optimiser_options'][key] != value:
-                            print(f'Note: debug_optimiser_options["{key}"] overriding optimiser_options["{key}"] '
-                                  f'({inp_data_dict["optimiser_options"][key]} -> {value})')
-                    inp_data_dict['optimiser_options'][key] = value
+        # Only apply when DEBUG is True to avoid overriding production runs
+        if inp_data_dict['DEBUG']:
+            if 'debug_optimiser_options' in inp_data_dict.keys() and inp_data_dict['debug_optimiser_options'] is not None:
+                debug_opts = inp_data_dict['debug_optimiser_options']
+                if isinstance(debug_opts, dict):
+                    for key, value in debug_opts.items():
+                        if key in inp_data_dict['optimiser_options']:
+                            if inp_data_dict['optimiser_options'][key] != value:
+                                print(f'Note: debug_optimiser_options["{key}"] overriding optimiser_options["{key}"] '
+                                      f'({inp_data_dict["optimiser_options"][key]} -> {value})')
+                        inp_data_dict['optimiser_options'][key] = value
 
         # for generation only
     
         inp_data_dict['vessels_csv_abs_path'] = os.path.join(inp_data_dict['resources_dir'], file_prefix + '_vessel_array.csv')
         inp_data_dict['parameters_csv_abs_path'] = os.path.join(inp_data_dict['resources_dir'], inp_data_dict['input_param_file'])
 
+        if inp_data_dict.get('model_type') == 'cpp' and inp_data_dict.get('couple_to_1d'):
+            file_prefix_0d = file_prefix + '_0d'
+            file_prefix_1d = file_prefix + '_1d'
+
+            vessels_csv_abs_path = inp_data_dict['vessels_csv_abs_path']
+            idx_last = vessels_csv_abs_path.rfind(file_prefix)
+            vessel_filename_0d = vessels_csv_abs_path[:idx_last] + file_prefix_0d + vessels_csv_abs_path[idx_last+len(file_prefix):]
+            vessel_filename_1d = vessels_csv_abs_path[:idx_last] + file_prefix_1d + vessels_csv_abs_path[idx_last+len(file_prefix):]
+
+            inp_data_dict['file_prefix_0d'] = file_prefix_0d
+            inp_data_dict['file_prefix_1d'] = file_prefix_1d
+            inp_data_dict['vessels_0d_csv_abs_path'] = vessel_filename_0d
+            inp_data_dict['vessels_1d_csv_abs_path'] = vessel_filename_1d
+
         return inp_data_dict
 
 def get_solver_info_default(model_type):
     if model_type == 'cellml_only':
         return {
-            'solver': 'CVODE',
+            'solver': 'CVODE_opencor',
             'MaximumStep': 0.001,
-            'MaximumNumberOfSteps': 5000
+            'MaximumNumberOfSteps': 5000,
+            'rtol': 1e-8,
+            'atol': 1e-8
         }
     if model_type == 'python':
         return {
             'solver': 'solve_ivp',
             'MaximumStep': 0.001,
-            'MaximumNumberOfSteps': 5000
+            'MaximumNumberOfSteps': 5000,
+            'rtol': 1e-8,
+            'atol': 1e-8
         }
     if model_type == 'cpp':
         return {
             'solver': 'CVODE',
-            'MaximumStep': 0.001
+            'MaximumStep': 0.001,
+            'rtol': 1e-8,
+            'atol': 1e-8
         }
     raise ValueError(f'Invalid model type: {model_type}')
 
@@ -673,57 +775,232 @@ class ObsAndParamDataParser(object):
             return None
 
         gt_df, protocol_info, prediction_info = None, None, None
+        REQUIRED = "REQUIRED"
+
+        def _is_missing_scalar(val):
+            if val is None:
+                return True
+            try:
+                is_na = pd.isna(val)
+            except Exception:
+                return False
+            return isinstance(is_na, (bool, np.bool_)) and bool(is_na)
 
         # --- Case 1: Simple list of data items ---
         if type(json_obj) == list:
             gt_df = pd.DataFrame(json_obj)
             protocol_info = {"pre_times": [pre_time], 
                              "sim_times": [[sim_time]],
-                             "params_to_change": [[None]]}
+                             "params_to_change": {}}
             prediction_info = {'names': [], 'units': [], 'names_for_plotting': [], 'experiment_idxs': []}
             
 
         # --- Case 2: Dictionary structure ---
         elif type(json_obj) == dict:
             # Load Data Items (gt_df)
-            if 'data_items' in json_obj.keys():
-                gt_df = pd.DataFrame(json_obj['data_items'])
-            elif 'data_item' in json_obj.keys():
-                gt_df = pd.DataFrame(json_obj['data_item']) 
+            if 'data_items' in json_obj.keys() or 'data_item' in json_obj.keys():
+                data_items = json_obj.get('data_items', json_obj.get('data_item', []))
+                gt_df = pd.DataFrame(data_items)
             else:
                 print("data_items not found in json object. ",
                       "Please check that data_items is the key for the list of data items")
 
             # Load Protocol Info
             if 'protocol_info' in json_obj.keys():
-                protocol_info = json_obj['protocol_info']
-                if "sim_times" not in protocol_info: protocol_info["sim_times"] = [[sim_time]]
-                if "pre_times" not in protocol_info: protocol_info["pre_times"] = [pre_time]
+                protocol_info = copy.deepcopy(json_obj['protocol_info'])
             else:
                 if pre_time is None or sim_time is None:
                     print("protocol_info not found in json object. ",
                           "If this is the case sim_time and pre_time must be set",
                           "in the user_inputs.yaml file")
                     exit()
-                protocol_info = {"pre_times": [pre_time], "sim_times": [[sim_time]], "params_to_change": [[None]]}
+                protocol_info = {"pre_times": [pre_time], "sim_times": [[sim_time]], "params_to_change": {}}
+
+            protocol_schema = {
+                "pre_times": {"types": (list, tuple, np.ndarray), "default": [pre_time] if pre_time is not None else REQUIRED},
+                "sim_times": {"types": (list, tuple, np.ndarray), "default": [[sim_time]] if sim_time is not None else REQUIRED},
+                "params_to_change": {"types": (dict,), "default": {}},
+                "experiment_labels": {"types": (list, tuple, np.ndarray), "default": None},
+                "experiment_colors": {"types": (list, tuple, np.ndarray), "default": None},
+                "comment": {"types": (str,), "default": None},
+            }
+
+            unknown_protocol_keys = sorted(set(protocol_info.keys()) - set(protocol_schema.keys()))
+            if len(unknown_protocol_keys) > 0:
+                raise ValueError(
+                    f"Unknown protocol_info keys not in schema: {unknown_protocol_keys}"
+                )
+
+            missing_protocol_required = []
+            protocol_type_errors = []
+            for key, rules in protocol_schema.items():
+                allowed = rules["types"]
+                default = rules["default"]
+
+                if key not in protocol_info or _is_missing_scalar(protocol_info[key]):
+                    if default == REQUIRED:
+                        missing_protocol_required.append(key)
+                    else:
+                        protocol_info[key] = copy.deepcopy(default)
+                        continue
+
+                if not isinstance(protocol_info[key], allowed):
+                    protocol_type_errors.append(
+                        f"protocol_info['{key}']: expected {allowed}, got {type(protocol_info[key])}"
+                    )
+
+            if len(missing_protocol_required) > 0:
+                raise ValueError(
+                    f"Missing required protocol_info keys: {sorted(missing_protocol_required)}"
+                )
+            if len(protocol_type_errors) > 0:
+                raise ValueError(
+                    "Invalid protocol_info value types:\n" + "\n".join(protocol_type_errors)
+                )
 
             # Load Prediction Info
             if 'prediction_items' in json_obj.keys():
+                prediction_items = json_obj['prediction_items']
+                if not isinstance(prediction_items, (list, tuple)):
+                    raise ValueError(
+                        f"prediction_items must be a list of dict entries, got {type(prediction_items)}"
+                    )
+
+                prediction_entry_schema = {
+                    "variable": {"types": (str,), "default": REQUIRED},
+                    "unit": {"types": (str,), "default": REQUIRED},
+                    "name_for_plotting": {"types": (str,), "default": lambda entry: entry["variable"]},
+                    "experiment_idx": {"types": (int, np.integer), "default": 0},
+                }
+
                 prediction_info = {'names': [], 'units': [], 'names_for_plotting': [], 'experiment_idxs': []}
-                for entry in json_obj['prediction_items']:
-                    if 'variable' not in entry: print('"variable" missing, exiting'); exit()
-                    if 'unit' not in entry: print('"unit" missing, exiting'); exit()
-                    
+                for entry_idx, raw_entry in enumerate(prediction_items):
+                    if not isinstance(raw_entry, dict):
+                        raise ValueError(
+                            f"prediction_items[{entry_idx}] must be a dict, got {type(raw_entry)}"
+                        )
+                    entry = copy.deepcopy(raw_entry)
+
+                    unknown_pred_keys = sorted(set(entry.keys()) - set(prediction_entry_schema.keys()))
+                    if len(unknown_pred_keys) > 0:
+                        raise ValueError(
+                            f"Unknown keys in prediction_items[{entry_idx}] not in schema: {unknown_pred_keys}"
+                        )
+
+                    missing_pred_required = []
+                    pred_type_errors = []
+                    for key, rules in prediction_entry_schema.items():
+                        allowed = rules["types"]
+                        default = rules["default"]
+
+                        if key not in entry or _is_missing_scalar(entry[key]):
+                            if default == REQUIRED:
+                                missing_pred_required.append(key)
+                                continue
+                            entry[key] = default(entry) if callable(default) else copy.deepcopy(default)
+
+                        if not isinstance(entry[key], allowed):
+                            pred_type_errors.append(
+                                f"prediction_items[{entry_idx}]['{key}']: expected {allowed}, got {type(entry[key])}"
+                            )
+
+                    if len(missing_pred_required) > 0:
+                        raise ValueError(
+                            f"Missing required keys in prediction_items[{entry_idx}]: {sorted(missing_pred_required)}"
+                        )
+                    if len(pred_type_errors) > 0:
+                        raise ValueError(
+                            "Invalid prediction_items value types:\n" + "\n".join(pred_type_errors)
+                        )
+
                     prediction_info['names'].append(entry['variable'])
                     prediction_info['units'].append(entry['unit'])
-                    prediction_info['names_for_plotting'].append(entry.get('name_for_plotting', entry['variable']))
-                    prediction_info['experiment_idxs'].append(entry.get('experiment_idx', 0))
+                    prediction_info['names_for_plotting'].append(entry['name_for_plotting'])
+                    prediction_info['experiment_idxs'].append(entry['experiment_idx'])
             else:
-                prediction_info = None
+                prediction_info = {'names': [], 'units': [], 'names_for_plotting': [], 'experiment_idxs': []}
             
         else:
             print(f"Error: unknown data type for imported json object of {type(json_obj)}")
             return None
+
+        # Fill common optional fields so downstream processing can rely on defaults.
+        if gt_df is not None:
+            schema = {
+                "variable": {"types": (str,), "default": REQUIRED},
+                "name_for_plotting": {"types": (str,), "default": lambda df: df["variable"]},
+                "data_type": {"types": (str,), "default": REQUIRED},
+                "unit": {"types": (str,), "default": REQUIRED},
+                "weight": {"types": (int, float, np.integer, np.floating, list, np.ndarray), "default": 1.0},
+                "operands": {"types": (list, tuple, np.ndarray), "default": REQUIRED},
+                "operation": {"types": (str,), "default": None},
+                "operation_kwargs": {"types": (dict,), "default": lambda df: [{} for _ in range(len(df))]},
+                "value": {"types": (int, float, np.integer, np.floating, list, np.ndarray), "default": REQUIRED},
+                "std": {"types": (int, float, np.integer, np.floating, list, np.ndarray), "default": REQUIRED},
+                "experiment_idx": {"types": (int, np.integer), "default": 0},
+                "subexperiment_idx": {"types": (int, np.integer), "default": 0},
+                "plot_type": {"types": (str,), "default": None},
+                "plot_color": {"types": (str,), "default": None},
+                "comment": {"types": (str,), "default": None},
+                "cost_type": {"types": (str,), "default": "MSE"},
+                "obs_type": {"types": (str,), "default": None},
+                "frequencies": {"types": (list, tuple, np.ndarray, int, float, np.integer, np.floating), "default": None},
+                # If omitted, phase weighting should follow the same weighting as amplitude.
+                "phase_weight": {"types": (int, float, np.integer, np.floating, list, np.ndarray), "default": lambda df: df["weight"]},
+                "phase": {"types": (list, tuple, np.ndarray, int, float, np.integer, np.floating), "default": None},
+                "prob_dist_params": {"types": (dict,), "default": None},
+                "obs_dt": {"types": (int, float, np.integer, np.floating), "default": None},
+                "dt": {"types": (int, float, np.integer, np.floating), "default": None},
+                "sample_rate": {"types": (int, float, np.integer, np.floating), "default": None},
+            }
+
+            unknown_cols = sorted(set(gt_df.columns) - set(schema.keys()))
+            if len(unknown_cols) > 0:
+                raise ValueError(
+                    f"Unknown data_item keys not in schema: {unknown_cols}"
+                )
+
+            type_errors = []
+            missing_required_cols = []
+            for col, rules in schema.items():
+                allowed = rules["types"]
+                default = rules["default"]
+
+                if col not in gt_df.columns:
+                    if default == REQUIRED:
+                        missing_required_cols.append(col)
+                        continue
+                    if callable(default):
+                        gt_df[col] = pd.Series(default(gt_df), index=gt_df.index)
+                    else:
+                        gt_df[col] = default
+                else:
+                    if default != REQUIRED:
+                        missing_mask = gt_df[col].apply(_is_missing_scalar)
+                        if missing_mask.any():
+                            if callable(default):
+                                default_series = pd.Series(default(gt_df), index=gt_df.index)
+                                gt_df[col] = gt_df[col].where(~missing_mask, default_series)
+                            else:
+                                gt_df[col] = gt_df[col].where(~missing_mask, default)
+
+                for row_idx, val in gt_df[col].items():
+                    if _is_missing_scalar(val):
+                        continue
+                    if not isinstance(val, allowed):
+                        type_errors.append(
+                            f"row {row_idx}, column '{col}': expected {allowed}, got {type(val)}"
+                        )
+
+            if len(missing_required_cols) > 0:
+                raise ValueError(
+                    f"Missing required data_item keys: {sorted(missing_required_cols)}"
+                )
+
+            if len(type_errors) > 0:
+                raise ValueError(
+                    "Invalid data_item value types:\n" + "\n".join(type_errors)
+                )
         
         return {
             "gt_df": gt_df, 
@@ -818,7 +1095,10 @@ class ObsAndParamDataParser(object):
         obs_info["weight_amp_vec"] = weights[data_types == "frequency"]
         obs_info["weight_prob_dist_vec"] = weights[data_types == "prob_dist"]
 
-        phase_weights = gt_df.get("phase_weight", pd.Series([1] * N))
+        phase_weights = gt_df.apply(
+            lambda row: row["phase_weight"] if row.get("phase_weight") is not None else row["weight"],
+            axis=1,
+        )
         obs_info["weight_phase_vec"] = phase_weights[data_types == "frequency"].to_numpy()
 
         obs_info["cost_type"] = [gt_df.iloc[II].get("cost_type", "MSE") for II in range(N)]
@@ -967,13 +1247,13 @@ class ObsAndParamDataParser(object):
         # --- Protocol Info Validation ---
         N_exp = protocol['num_experiments']
         
-        if "experiment_colors" not in protocol:
+        if "experiment_colors" not in protocol or protocol["experiment_colors"] is None:
             protocol["experiment_colors"] = ['r'] * N_exp
         elif len(protocol["experiment_colors"]) != N_exp:
             print('Error: experiment_colors length does not match num_experiments, exiting')
             exit()
             
-        if "experiment_labels" not in protocol:
+        if "experiment_labels" not in protocol or protocol["experiment_labels"] is None:
             protocol["experiment_labels"] = [None] * N_exp
         elif len(protocol["experiment_labels"]) != N_exp:
             print('Error: experiment_labels length does not match num_experiments, exiting')
@@ -1013,7 +1293,14 @@ class ObsAndParamDataParser(object):
                 # Handle phase map separately
                 freq_mask = mask & (df["data_type"] == "frequency")
                 # Use "phase_weight" if present, otherwise use "weight", or 0.0
-                phase_weights = np.where(freq_mask, df.apply(lambda row: row.get("phase_weight", row["weight"]), axis=1), 0.0)
+                phase_weights = np.where(
+                    freq_mask,
+                    df.apply(
+                        lambda row: row["phase_weight"] if row.get("phase_weight") is not None else row["weight"],
+                        axis=1,
+                    ),
+                    0.0,
+                )
                 phase_map[exp_idx][this_sub_idx] = phase_weights
 
         # --- Store Final Maps in protocol_info ---

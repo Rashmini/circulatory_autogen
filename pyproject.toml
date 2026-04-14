@@ -38,11 +38,13 @@ dependencies = [
     "SALib==1.5.1",
     "seaborn>=0.11.0",
     "rdflib>=5.0.0",
+    "libcellml>=0.6.3",
     "ruamel.yaml>=0.17.0",
     "sympy>=1.8.0",
     "tqdm>=4.62.0",
     "statsmodels>=0.12.0",
     "schwimmbad>=0.3.0",
+    "myokit>=1.39.1",
 ]
 
 [project.optional-dependencies]
@@ -75,7 +77,9 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
     "mpi: marks tests that require MPI",
+    "need_opencor: marks tests that require OpenCOR backend availability",
     "need_autogen: waits for all autogeneration tests to finish before running",
+    "solver: marks solver-focused tests",
     "one_rank_task: marks an autogeneration test that signals completion",
     "autogen_task: marks an autogeneration test that signals completion",
     "autogen_rank(idx): autogeneration test assigned rank index",

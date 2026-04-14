@@ -92,7 +92,7 @@ class CVS0DParamID():
 
         self.mcmc_options = mcmc_options
         if solver_info is None:
-            self.solver_info = {"solver": "CVODE"} 
+            self.solver_info = {"solver": "CVODE_myokit"}
         else:
             self.solver_info = solver_info
         self.dt = dt
@@ -203,7 +203,7 @@ class CVS0DParamID():
         self.sensitivity_calculated = False
 
     @classmethod
-    def from_dict(cls, inp_data_dict):
+    def init_from_dict(cls, inp_data_dict):
         # Only pass kwargs that exist in inp_data_dict
         arg_options = [
             'model_path', 'model_type', 'param_id_method', 'mcmc_instead',
@@ -220,23 +220,44 @@ class CVS0DParamID():
 
         return cls(**kwargs)
 
+    @classmethod
+    def init_from_all_dicts(cls, inp_data_dict, obs_data_dict, params_for_id_dict):
+        new_object = cls.init_from_dict(inp_data_dict)
+        new_object.set_ground_truth_data(obs_data_dict)
+        new_object.set_params_for_id(params_for_id_dict)
+        return new_object
+
     def temp_test(self):
         self.param_id.temp_test()
     def temp_test2(self):
         self.param_id.temp_test2()
 
     def run(self):
+        self._check_info_available()
         self.param_id.run()
 
     def run_mcmc(self):
         mcmc_object.run()
+    
+    def _check_info_available(self):
+        if self.gt_df is None:
+            raise ValueError('Ground truth data not set')
+        if self.protocol_info is None:
+            raise ValueError('Protocol info not set')
+        if self.obs_info is None:
+            raise ValueError('Obs info not set')
+        if self.param_id_info is None:
+            raise ValueError('Param id info not set')
 
-    def run_single_sensitivity(self,sensitivity_output_path):
-        self.param_id.run_single_sensitivity(sensitivity_output_path)
-
-    def simulate_with_best_param_vals(self, reset=True, only_one_exp=-1):
-        self.param_id.simulate_once(reset=reset, only_one_exp=only_one_exp)
-        self.best_output_calculated = True
+    def simulate_with_best_param_vals(self, reset=True, only_one_exp=-1, return_series=False):
+        if return_series:
+            obs_dicts, obs_arrays = self.param_id.simulate_once(reset=reset, only_one_exp=only_one_exp, return_series=return_series)
+            self.best_output_calculated = True
+            return obs_dicts, obs_arrays
+        else:
+            obs_dict, _ = self.param_id.simulate_once(reset=reset, only_one_exp=only_one_exp)
+            self.best_output_calculated = True
+            return obs_dict
 
     def update_param_range(self, params_to_update_list_of_lists, mins, maxs):
         for params_to_update_list, min, max in zip(params_to_update_list_of_lists, mins, maxs):
@@ -276,9 +297,10 @@ class CVS0DParamID():
     def set_param_id_method(self, param_id_method):
         self.param_id_method = param_id_method
         self.param_id.set_param_id_method(param_id_method)
-        
+
     def set_ground_truth_data(self, obs_data_dict):
-        print(f'Setting ground truth data: {obs_data_dict}')
+        if self.rank == 0:
+            print(f'Setting ground truth data: {obs_data_dict}')
         parsed_data = self.obs_and_param_parser.parse_obs_data_json(
             obs_data_dict=obs_data_dict,
             pre_time=self.pre_time,
@@ -295,15 +317,19 @@ class CVS0DParamID():
             dt=self.dt
         )
         self.param_id.set_obs_info(self.obs_info)
+        self.param_id.set_protocol_info(self.protocol_info)
         self.param_id.set_prediction_info(self.prediction_info)
-        print(f'Ground truth data set: {self.obs_info}')
+        if self.rank == 0:
+            print(f'Ground truth data set: {self.obs_info}')
     
     def set_params_for_id(self, params_for_id_dict):
-        print(f'Setting params for id: {params_for_id_dict}')
+        if self.rank == 0:
+            print(f'Setting params for id: {params_for_id_dict}')
         self.param_id_info = self.obs_and_param_parser.get_param_id_info_from_entries(params_for_id_dict)
         self.obs_and_param_parser.save_param_names(self.param_id_info, self.output_dir)
         self.param_id.set_param_id_info(self.param_id_info)
-        print(f'Params for id set: {self.param_id_info["param_names"]}')
+        if self.rank == 0:
+            print(f'Params for id set: {self.param_id_info["param_names"]}')
 
     def set_best_param_vals(self, best_param_vals):
         if self.mcmc_instead:
@@ -530,11 +556,11 @@ class CVS0DParamID():
                             axs.axvline(x=t_bf,
                                         color=self.obs_info['plot_colors'][II],
                                         label=f'{self.obs_info["operations"][II]} output')
-                        elif self.obs_info['plot_type'][II] == None:
+                        elif self.obs_info['plot_type'][II] in [None, "None", "none", "NULL", "null", "Null", np.nan, "nan"]:
                             pass
                         else:
                             print(f'plot_type for {self.obs_info["obs_names"][II]} ',
-                                    f'of {self.obs_info["plot_constant_with_series_type"][II]} is not recognised',
+                                    f'of {self.obs_info["plot_type"][II]} is not recognised',
                                     'for constants it must be in [None, horizontal, veritical, horizontal_from_min], exiting')
                             exit()
                     elif self.obs_info["data_types"][II] == 'series':
@@ -701,17 +727,39 @@ class CVS0DParamID():
             obs_names_for_plot_list.append(name_str)
         obs_names_for_plot = np.array(obs_names_for_plot_list)
 
-        num_plots = len(obs_names_for_plot)// 10 + 1
+        do_plots_per_exp = True
+        if do_plots_per_exp:
+            num_plots = len(self.protocol_info["pre_times"])
+        else:
+            num_plots = len(obs_names_for_plot)// 10 + 1
+
+        y_min_percent = 1.05 * np.min(percent_error_vec)
+        y_max_percent = 1.05 * np.max(percent_error_vec)
 
         for plot_idx in range(num_plots):
             fig, axs = plt.subplots()
-            if plot_idx == num_plots - 1:
-                bar_list = axs.bar(obs_names_for_plot[plot_idx*10:], percent_error_vec[plot_idx*10:], label='% error', width=1.0, color='b', edgecolor='black')
+
+            if do_plots_per_exp:
+                obs_idx_for_plot = [
+                    II for II in range(self.obs_info["num_obs"])
+                    if self.obs_info["experiment_idxs"][II] == plot_idx
+                ]
+                if len(obs_idx_for_plot) == 0:
+                    plt.close(fig)
+                    continue
             else:
-                bar_list = axs.bar(obs_names_for_plot[plot_idx*10:plot_idx*10+10], percent_error_vec[plot_idx*10:plot_idx*10+10], label='% error', width=1.0, color='b', edgecolor='black')
+                start_idx = plot_idx * 10
+                end_idx = min(start_idx + 10, len(obs_names_for_plot))
+                obs_idx_for_plot = list(range(start_idx, end_idx))
+
+            bar_list = axs.bar(obs_names_for_plot[obs_idx_for_plot],
+                               percent_error_vec[obs_idx_for_plot],
+                               label='% error', width=1.0, color='b',
+                               edgecolor='black')
 
             # axs.set_ylim(ymin=0.0)
             # axs.set_yticks(np.arange(0, 21, 10))
+            axs.set_ylim(y_min_percent, y_max_percent)
             axs.axhline(y=0.0,linewidth= 3, color='k', linestyle= 'dotted')
 
             # bar_list[0].set_facecolor('r')
@@ -734,10 +782,19 @@ class CVS0DParamID():
 
             #plot error as number of standard deviations of
             fig, axs = plt.subplots()
-            if plot_idx == num_plots - 1:
-                bar_list = axs.bar(obs_names_for_plot[plot_idx*10:], std_error_vec[plot_idx*10:], label='% error', width=1.0, color='b', edgecolor='black')
+            if do_plots_per_exp:
+                if len(obs_idx_for_plot) == 0:
+                    plt.close(fig)
+                    continue
+                bar_list = axs.bar(obs_names_for_plot[obs_idx_for_plot],
+                                   std_error_vec[obs_idx_for_plot],
+                                   label='% error', width=1.0, color='b',
+                                   edgecolor='black')
             else:
-                bar_list = axs.bar(obs_names_for_plot[plot_idx*10:plot_idx*10+10], std_error_vec[plot_idx*10:plot_idx*10+10], label='% error', width=1.0, color='b', edgecolor='black')
+                if plot_idx == num_plots - 1:
+                    bar_list = axs.bar(obs_names_for_plot[plot_idx*10:], std_error_vec[plot_idx*10:], label='% error', width=1.0, color='b', edgecolor='black')
+                else:
+                    bar_list = axs.bar(obs_names_for_plot[plot_idx*10:plot_idx*10+10], std_error_vec[plot_idx*10:plot_idx*10+10], label='% error', width=1.0, color='b', edgecolor='black')
             axs.axhline(y=0.0,linewidth=3, color='k', linestyle= 'dotted')
 
             
@@ -1222,25 +1279,36 @@ class OpencorParamID():
             if self.protocol_info['sim_times'][0][0] is not None:
                 self.sim_time = self.protocol_info['sim_times'][0][0]
             else:
-                # set temporary sim time, just to initialise the sim_helper
-                self.sim_time = 0.001
-        else:
-            self.sim_time = 0.001
-
-        if self.protocol_info is not None:
+                self.sim_time = None
             if self.protocol_info['pre_times'][0] is not None:
                 self.pre_time = self.protocol_info['pre_times'][0]
             else:
-                # set temporary pre time, just to initialise the sim_helper
-                self.pre_time = 0.001
+                self.pre_time = None
         else:
-            self.pre_time = 0.001
+            self.sim_time = None
+            self.pre_time = None
+
+        if self.sim_time is None:
+            if 'sim_time' in self.solver_info:
+                self.sim_time = self.solver_info['sim_time']
+            else:
+                self.sim_time = None
+        if self.pre_time is None:
+            if 'pre_time' in self.solver_info:
+                self.pre_time = self.solver_info['pre_time']
+            else:
+                self.pre_time = None
 
         self.sim_helper = self.initialise_sim_helper()
 
-        self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
+        if self.sim_time is not None and self.pre_time is not None:
+            self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
+            self.n_steps = int(self.sim_time/self.dt)
+        else:
+            self.n_steps = None
 
-        self.n_steps = int(self.sim_time/self.dt)
+        if self.protocol_info is not None:
+            self.sim_helper.set_protocol_info(self.protocol_info)
 
         # initialise
         self.param_init = None
@@ -1293,7 +1361,12 @@ class OpencorParamID():
         self.param_id_info = param_id_info
         self.num_params = len(self.param_id_info["param_names"])
         self.param_norm_obj = Normalise_class(self.param_id_info["param_mins"], self.param_id_info["param_maxs"])
-        
+    
+    def set_protocol_info(self, protocol_info):
+        self.protocol_info = protocol_info
+        # set the protocol_info in the sim_helper so that the protocol traces can be accessed.
+        self.sim_helper.set_protocol_info(self.protocol_info)
+
     def set_prediction_info(self, prediction_info):
         self.prediction_info = prediction_info
     
@@ -1410,117 +1483,98 @@ class OpencorParamID():
             print('best fit params : {}'.format(self.best_param_vals))
             print('best cost       : {}'.format(self.best_cost))
 
+            # running with best_param and saving outputs
+            for exp_idx in range(self.protocol_info["num_experiments"]):
+                self.simulate_once(self.best_param_vals, reset=True, only_one_exp=exp_idx)
+                all_outputs_dict = self.sim_helper.get_all_results_dict()
+                # save as npz
+                np.savez(os.path.join(self.output_dir, f'all_outputs_with_best_param_vals_exp_{exp_idx}.npz'), **all_outputs_dict)
         return
     
     def get_cost_obs_and_pred_from_params(self, param_vals, reset=True, 
                                           only_one_exp=-1, pred_names=None):
 
         pred_outputs_list = []
-        if self.protocol_info["num_sub_total"] == 1:
-            # do normal cost calculation
-            # TODO technically this if chunk isn't needed, as the below works for general experiment numbers
-            # TODO but I have left it because it is much simpler and easier to understand
+        # loop through subexperiments
+        if only_one_exp == -1:
+            # unless the user wants to just to one experiment, reset must be true
+            reset = True
+            exp_idxs_to_run = range(self.protocol_info["num_experiments"])
+        else:
+            exp_idxs_to_run = [only_one_exp]
+            
+        operands_outputs_list = []
+        for exp_idx in range(self.protocol_info["num_experiments"]):
+            if exp_idx not in exp_idxs_to_run:
+                # Preserve indexing expected by downstream subexp_count lookups.
+                for _ in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
+                    operands_outputs_list.append(None)
+                continue
+
+            # set param vals for this iteration of param_id
             self.sim_helper.set_param_vals(self.param_id_info["param_names"], param_vals)
             self.sim_helper.reset_states() # this needs to be done to make sure states defined by a constant are set
-            success = self.sim_helper.run()
-            if success:
-                operands_outputs = self.sim_helper.get_results(self.obs_info["operands"])
+            current_time = 0
+            for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
+                subexp_count = int(np.sum([num_sub for num_sub in 
+                                            self.protocol_info["num_sub_per_exp"][:exp_idx]]) + this_sub_idx)
+        
+                self.sim_time = self.protocol_info["sim_times"][exp_idx][this_sub_idx]
+                self.pre_time = self.protocol_info["pre_times"][exp_idx]
+                # resize the experiment and change parameters for this subexperiment
+                if this_sub_idx == 0:
+                    # we need a presim here 
+                    self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
+                    current_time += self.pre_time
+                else:
+                    self.sim_helper.update_times(self.dt, current_time, 
+                                                self.sim_time, 0.0)
+                # change parameters
+                self.sim_helper.set_param_vals(list(self.protocol_info["params_to_change"].keys()), 
+                                        [self.protocol_info["params_to_change"][param_name][exp_idx][this_sub_idx] for \
+                                            param_name in self.protocol_info["params_to_change"].keys()])
 
-                cost = self.get_cost_from_operands(operands_outputs)
+                success = self.sim_helper.run()
+                current_time += self.sim_time
+                if success:
+                    # TODO currently we calculate the outputs for all subexperiments, which is inefficient
+                    # TODO we could calculate the outputs for each subexperiment only when needed for the cost
+                    # TODO Fine for now, simulation time is much greater than cost calculation, so no big issue yet.
+                    operands_outputs = self.sim_helper.get_results(self.obs_info["operands"])
 
-                operands_outputs_list = [operands_outputs]
-                if pred_names is not None:
-                    pred_outputs = self.sim_helper.get_results(pred_names)
-                    pred_outputs_list.append(pred_outputs)
-                # reset params
-                if reset:
-                    self.sim_helper.reset_and_clear()
+                    operands_outputs_list.append(operands_outputs)
 
-            else:
-                # simulation set cost to large,
-                if MPI.COMM_WORLD.Get_rank() == 0:
+                    if pred_names is not None:
+                        pred_outputs = self.sim_helper.get_results(pred_names)
+                        pred_outputs_list.append(pred_outputs)
+                    
+                    # reset params
+                    if reset and this_sub_idx == self.protocol_info["num_sub_per_exp"][exp_idx] - 1:
+                        # reset if we are at the end of this experiment
+                        self.sim_helper.reset_and_clear()
+
+                else:
+                    # simulation set cost to large,
                     print('simulation failed with params...')
                     print(param_vals)
-                return np.inf, [], []
-        else:
-            # loop through subexperiments
-            if only_one_exp == -1:
-                # unless the user wants to just to one experiment, reset must be true
-                reset = True
-                exp_idxs_to_run = range(self.protocol_info["num_experiments"])
-            else:
-                exp_idxs_to_run = [only_one_exp]
-                
-            operands_outputs_list = []
-            for exp_idx in range(self.protocol_info["num_experiments"]):
-                # set param vals for this iteration of param_id
-                self.sim_helper.set_param_vals(self.param_id_info["param_names"], param_vals)
-                self.sim_helper.reset_states() # this needs to be done to make sure states defined by a constant are set
-                current_time = 0
-                for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
-                    if exp_idx not in exp_idxs_to_run:
-                        operands_outputs_list.append(None)
-                        continue
-                    subexp_count = int(np.sum([num_sub for num_sub in 
-                                               self.protocol_info["num_sub_per_exp"][:exp_idx]]) + this_sub_idx)
-            
-                    self.sim_time = self.protocol_info["sim_times"][exp_idx][this_sub_idx]
-                    self.pre_time = self.protocol_info["pre_times"][exp_idx]
-                    if self.protocol_info["num_sub_total"] > 1:
-                        # resize the experiment and change parameters for this subexperiment
-                        if this_sub_idx == 0:
-                            # we need a presim here 
-                            self.sim_helper.update_times(self.dt, 0.0, self.sim_time, self.pre_time)
-                            current_time += self.pre_time
-                        else:
-                            self.sim_helper.update_times(self.dt, current_time, 
-                                                        self.sim_time, 0.0)
-                    # change parameters
-                    self.sim_helper.set_param_vals(list(self.protocol_info["params_to_change"].keys()), 
-                                            [self.protocol_info["params_to_change"][param_name][exp_idx][this_sub_idx] for \
-                                                param_name in self.protocol_info["params_to_change"].keys()])
-
-                    success = self.sim_helper.run()
-                    current_time += self.sim_time
-                    if success:
-                        # TODO currently we calculate the outputs for all subexperiments, which is inefficient
-                        # TODO we could calculate the outputs for each subexperiment only when needed for the cost
-                        # TODO Fine for now, simulation time is much greater than cost calculation, so no big issue yet.
-                        operands_outputs = self.sim_helper.get_results(self.obs_info["operands"])
-
-                        operands_outputs_list.append(operands_outputs)
-
-                        if pred_names is not None:
-                            pred_outputs = self.sim_helper.get_results(pred_names)
-                            pred_outputs_list.append(pred_outputs)
-                        
-                        # reset params
-                        if reset and this_sub_idx == self.protocol_info["num_sub_per_exp"][exp_idx] - 1:
-                            # reset if we are at the end of this experiment
-                            self.sim_helper.reset_and_clear()
-
-                    else:
-                        # simulation set cost to large,
-                        print('simulation failed with params...')
-                        print(param_vals)
-                        print('failed on experiment idx = {} subexperiment idx = {}'.format(exp_idx, this_sub_idx))
-                        return np.inf, [], []
+                    print('failed on experiment idx = {} subexperiment idx = {}'.format(exp_idx, this_sub_idx))
+                    return np.inf, [], []
 
 
-            cost = 0
-            for exp_idx in exp_idxs_to_run:
-                if exp_idx not in exp_idxs_to_run:
-                    continue
-                for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
-                    subexp_count = int(np.sum([num_sub for num_sub in 
-                                               self.protocol_info["num_sub_per_exp"][:exp_idx]]) + this_sub_idx)
+        cost = 0
+        for exp_idx in exp_idxs_to_run:
+            if exp_idx not in exp_idxs_to_run:
+                continue
+            for this_sub_idx in range(self.protocol_info["num_sub_per_exp"][exp_idx]):
+                subexp_count = int(np.sum([num_sub for num_sub in 
+                                            self.protocol_info["num_sub_per_exp"][:exp_idx]]) + this_sub_idx)
 
-                    sub_cost = self.get_cost_from_operands(operands_outputs_list[subexp_count], 
-                                                               exp_idx=exp_idx, sub_idx=this_sub_idx)   
-                    cost += sub_cost
-            
-            # average cost over all subexperiments so that it is comparable between diff number of subexperiments
-            cost = cost/self.protocol_info["num_sub_total"] 
+                sub_cost = self.get_cost_from_operands(operands_outputs_list[subexp_count], 
+                                                            exp_idx=exp_idx, sub_idx=this_sub_idx)   
+                cost += sub_cost
+        
+        # average cost over all subexperiments so that it is comparable between diff number of subexperiments
+        cost = cost/self.protocol_info["num_sub_total"] 
 
         return cost, operands_outputs_list, pred_outputs_list
 
@@ -1788,7 +1842,10 @@ class OpencorParamID():
 
     def get_obs_output_dict(self, operands_outputs, get_all_series=False):
         if operands_outputs == None:
-            return None
+            if get_all_series:
+                return None, None
+            else:
+                return None
         obs_const_vec = np.zeros((len(self.obs_info["ground_truth_const"]), ))
         obs_series_list_of_arrays = [None]*len(self.obs_info["ground_truth_series"])
         obs_amp_list_of_arrays = [None]*len(self.obs_info["ground_truth_amp"])
@@ -1954,7 +2011,7 @@ class OpencorParamID():
             preds_const_vec[JJ + 2] = np.mean(preds[JJ, :])
         return preds_const_vec
 
-    def simulate_once(self, param_vals=None, reset=True, only_one_exp=-1):
+    def simulate_once(self, param_vals=None, reset=True, only_one_exp=-1, return_series=False):
         """
 
         Setting reset to False and only_one_exp to the experiment number you want to use 
@@ -1993,7 +2050,19 @@ class OpencorParamID():
 
         cost_check, obs = self.get_cost_and_obs_from_params(param_vals=param_vals, 
                                                             reset=reset, only_one_exp=only_one_exp)
-        obs_dicts = [self.get_obs_output_dict(obs_item) for obs_item in obs]
+
+
+        obs_dicts = []
+        obs_arrays = []
+        for obs_item in obs:                                                    
+            # if return_series:
+            obs_dict, obs_array = self.get_obs_output_dict(obs_item, get_all_series=True)
+            obs_dicts.append(obs_dict)
+            obs_arrays.append(obs_array)
+            # else:
+            #     obs_dict = self.get_obs_output_dict(obs_item)
+            #     obs_dicts.append(obs_dict)
+            #     obs_arrays.append(None)
 
         if only_one_exp != -1:
             # only print out results if doing all experiments, otherwise cost will be strange
@@ -2003,11 +2072,34 @@ class OpencorParamID():
         print(f'cost should be {best_cost}')
         print('cost check after single simulation is {}'.format(cost_check))
 
+        if abs(best_cost - cost_check) > 1e-3:
+            print(f'WARNING: best cost {best_cost} is not close to cost check {cost_check}')
+            print('calculating some debug metrics for this issue')
+
+            for exp_idx in range(self.protocol_info["num_experiments"]):
+                print(f'running simulation for experiment {exp_idx} to compare best fit and this run outputs')
+                best_fit_outputs = np.load(os.path.join(self.output_dir, f'all_outputs_with_best_param_vals_exp_{exp_idx}.npz'))
+                _, _ = self.get_cost_and_obs_from_params(self.best_param_vals, reset=True, only_one_exp=exp_idx)
+                this_run_outputs = self.sim_helper.get_all_results_dict()
+
+                for obs_idx in range(len(obs)):
+                    for key in best_fit_outputs.keys():
+                        print(f'parameter {key}')
+                        best_fit_output = best_fit_outputs[key]
+                        this_run_output = this_run_outputs[key]
+                        print('printing for the first `10 timepoints of the output difference')
+                        print(f'best fit output: {best_fit_output[:10]}')
+                        print(f'this run output: {this_run_output[:10]}')
+                        print(f'difference: {best_fit_output[:10] - this_run_output[:10]}')
+                        print(f'relative difference: {np.abs(best_fit_output[:10] - this_run_output[:10]) / (np.abs(best_fit_output[:10]) + 1e-10)}')
+        
+            
         print(f'final obs values :')
         for idx, obs_dict in enumerate(obs_dicts):
             print(f'subexperiment {idx+1}:')
             # TODO make the printing of the obs_dict more informative
             print(obs_dict['const'])
+        return obs_dicts, obs_arrays
 
     def set_bayesian_parameters(self, n_calls, n_initial_points, acq_func, random_state, acq_func_kwargs={}):
         if not self.param_id_method == 'bayesian':
@@ -2075,6 +2167,7 @@ class OpencorMCMC(OpencorParamID):
         num_procs = comm.Get_size()
         if rank == 0:
             print('Running mcmc')
+
 
         if num_procs > 1:
             # from pathos import multiprocessing
@@ -2235,7 +2328,7 @@ class MCMC_plotter:
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.Get_rank()
         
-        self.param_id_obs_file_prefix = re.sub('\.json', '', os.path.split(param_id_obs_path)[1])
+        self.param_id_obs_file_prefix = re.sub(r"\.json", "", os.path.split(param_id_obs_path)[1])
         case_type = f'{param_id_method}_{file_name_prefix}_{self.param_id_obs_file_prefix}'
         if self.rank == 0:
             if param_id_output_dir is None:

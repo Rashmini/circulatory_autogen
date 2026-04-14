@@ -31,15 +31,13 @@ jobs:
     - name: Install MPI
       run: |
         sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin
+        sudo apt-get install -y libopenmpi-dev openmpi-bin libsundials-dev build-essential
     
-    - name: Run tests (skip OpenCOR-dependent tests)
+    - name: Run tests (Myokit-first, skip OpenCOR-only)
       id: pytest
       run: |
-        # Run tests that don't require OpenCOR
-        # Note: Most tests require OpenCOR Python shell, so we skip integration/slow tests in CI
-        # Users should run full test suite locally with OpenCOR
-        pytest tests/ -v -m "not integration and not slow and not mpi" --tb=short --junitxml=junit.xml || true
+        # Run full suite, excluding only tests explicitly marked as OpenCOR-dependent.
+        pytest tests/ -v -m "not need_opencor" --tb=short --junitxml=junit.xml
     
     - name: Parse test results
       if: always()
@@ -111,8 +109,8 @@ jobs:
           echo "| ⏭️ Skipped | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
           echo "| **Pass Rate** | **$PASS_RATE%** |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> Note: Full test suite requires OpenCOR Python shell and should be run locally." >> $GITHUB_STEP_SUMMARY
-          echo "> CI runs only unit tests that don't require OpenCOR." >> $GITHUB_STEP_SUMMARY
+          echo "> Note: OpenCOR-specific tests are marked need_opencor and excluded in this job." >> $GITHUB_STEP_SUMMARY
+          echo "> CI runs the Myokit-first suite and fails on real test failures." >> $GITHUB_STEP_SUMMARY
         fi
 
   # Job to run full test suite if OpenCOR is available (optional)
@@ -136,7 +134,7 @@ jobs:
     - name: Install MPI
       run: |
         sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin
+        sudo apt-get install -y libopenmpi-dev openmpi-bin libsundials-dev build-essential
     
     - name: Download and setup OpenCOR
       run: |

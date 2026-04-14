@@ -1,4 +1,14 @@
+import warnings
+
 import opencor as oc
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"The value of the smallest subnormal for <class 'numpy\.float64'> type is zero\.",
+    category=UserWarning,
+    module=r"numpy\.core\.getlimits",
+)
+
 import numpy as np
 import os
 import sys
@@ -16,21 +26,31 @@ class SimulationHelper():
 
         self.cellml_path = cellml_path  # path to cellml file
         self.dt = dt  # time step
-        self.stop_time = pre_time + sim_time  # full time of simulation
-        self.pre_steps = int(pre_time/dt)  # number of steps to do before storing data (used to reach steady state)
-        self.n_steps = int(sim_time/dt)  # number of steps for storing data
+        self.protocol_info = None
+        if sim_time is not None and pre_time is not None:
+            self.stop_time = pre_time + sim_time  # full time of simulation
+            self.pre_steps = int(pre_time/dt)  # number of steps to do before storing data (used to reach steady state)
+            self.n_steps = int(sim_time/dt)  # number of steps for storing data
+        else:
+            self.stop_time = None
+            self.pre_steps = None
+            self.n_steps = None
+
         self.simulation = oc.open_simulation(cellml_path)
         if not self.simulation.valid():
-            print(f'simulation object opened from {cellml_path} is not valid, exiting')
-            exit()
+            raise ValueError(f'simulation object opened from {cellml_path} is not valid')
         self.data = self.simulation.data()
         if solver_info is None:
             solver_info = {'MaximumNumberOfSteps': 5000, 'MaximumStep': 0.0001}
+        
+        valid_unused_keys=["method", "solver", "dt_solver"]
         for key, value in solver_info.items():
+            if key == 'rtol':
+                key = 'RelativeTolerance'
+            if key == 'atol':
+                key = 'AbsoluteTolerance'
             # ignore high-level/legacy keys that aren't part of OpenCOR solver properties
-            if key.lower() == "method":
-                continue
-            if key.lower() == "solver":
+            if key.lower() in valid_unused_keys:
                 continue
             if key not in self.data.odeSolverProperties():
                 print(f'{key} is not a valid key for CVODE solver properties; valid keys are '
@@ -39,14 +59,23 @@ class SimulationHelper():
             self.data.set_ode_solver_property(key, value)
         self.data.set_point_interval(self.dt)  # time interval for data storage
         self.data.set_starting_point(0)
-        self.data.set_ending_point(self.stop_time)
-        self.tSim = np.linspace(pre_time, self.stop_time, self.n_steps + 1)  # time values for stored part of simulation
+        if pre_time is not None and sim_time is not None:
+            self.data.set_ending_point(self.stop_time)
+            self.tSim = np.linspace(pre_time, self.stop_time, self.n_steps + 1)  # time values for stored part of simulation
+        else:
+            self.tSim = None
+        self._has_run = False
+        self._last_results_dict = None
         
     def get_time(self, include_pre_time=False):
         if include_pre_time:
             return self.tSim
         else:
             return self.tSim - self.tSim[0]
+
+    def set_protocol_info(self, protocol_info):
+        """Store protocol metadata for a common helper API."""
+        self.protocol_info = protocol_info
 
     def _resolve_name(self, name):
         """
@@ -103,12 +132,16 @@ class SimulationHelper():
             self.reset_and_clear()
             return False
 
+        self._has_run = True
         return True
 
     def reset_and_clear(self, only_one_exp=-1):
+        if self._has_run:
+            self._last_results_dict = self._collect_all_results_dict()
         self.simulation.reset(True)
         self.simulation.release_all_values()
         self.simulation.clear_results()
+        self._has_run = False
 
     def reset_states(self):
         self.simulation.reset(False)  # True resets everything, False resets only the states
@@ -124,6 +157,19 @@ class SimulationHelper():
         variable_names = self.get_all_variable_names()
         results = self.get_results(variable_names, flatten=flatten)
         return results
+
+    def get_all_results_dict(self):
+        if self._has_run:
+            self._last_results_dict = self._collect_all_results_dict()
+            return {name: np.asarray(val).copy() for name, val in self._last_results_dict.items()}
+        if self._last_results_dict is not None:
+            return {name: np.asarray(val).copy() for name, val in self._last_results_dict.items()}
+        raise RuntimeError("Simulation has not been run yet.")
+
+    def _collect_all_results_dict(self):
+        variable_names = self.get_all_variable_names()
+        values = self.get_results(variable_names, flatten=True)
+        return {name: np.asarray(val) for name, val in zip(variable_names, values)}
 
     def get_results(self, variables_list_of_lists, flatten=False):
         # if the input is a list of variables, turn it into a list of lists
@@ -141,7 +187,8 @@ class SimulationHelper():
                 elif variable_name in self.simulation.results().algebraic():
                     results[JJ].append(self.simulation.results().algebraic()[variable_name].values()[-self.n_steps-1:].copy())
                 elif variable_name in self.data.constants():
-                    results[JJ].append(self.data.constants()[variable_name])
+                    const_val = self.data.constants()[variable_name]
+                    results[JJ].append(np.ones_like(self.tSim) * const_val)
                 else:
                     print(f'variable {variable_name} is not a model variable. model variables are')
                     print([name for name in self.simulation.results().states()])
@@ -175,8 +222,15 @@ class SimulationHelper():
         return param_init
 
     def set_param_vals(self, param_names, param_vals):
+            
         # ensure param_vals stores state values first, then constant values
         for JJ, param_name_or_list in enumerate(param_names):
+            if type(param_vals[JJ]) == str:
+                raise NotImplementedError("Setting parameter values by name of protocol trace is not implemented for OpenCOR")
+            elif type(param_vals[JJ]) not in [float, np.float64, int]:
+                raise ValueError(f"Parameter value {param_vals[JJ]} is not a valid type. {type(param_vals[JJ])}" + \
+                                 "must be a float, np.float64, or int.")
+                                 
             if not isinstance(param_name_or_list, list):
                 param_name_or_list = [param_name_or_list]
 
