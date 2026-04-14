@@ -40,7 +40,7 @@ Circulatory Autogen provides the following two main functionalities.
 
 If you are new to the project, follow these in order:
 
-1. [Getting Started](getting-started.md): install prerequisites and set up the OpenCOR Python environment.
+1. [Getting Started](getting-started.md): install prerequisites and Python dependencies from `pyproject.toml` (virtual environment recommended).
 2. [Designing a model](design-model.md): define your modules and configuration files.
 3. [Model Generation and Simulation](model-generation-simulation.md): generate a model and run it in OpenCOR or Python.
 4. [Parameter Identification](parameter-identification.md): calibrate parameters to data.
