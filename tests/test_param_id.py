@@ -628,6 +628,11 @@ def test_param_id_simple_physiological_succeeds(base_user_inputs, resources_dir,
     
     mpi_comm.Barrier()
 
+
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS") == "true",
+    reason="compare_optimisers is heavy; run locally only (skipped on GitHub Actions)",
+)
 @pytest.mark.integration
 @pytest.mark.slow
 @pytest.mark.mpi
