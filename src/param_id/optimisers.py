@@ -774,14 +774,14 @@ class SciPyMinimizeOptimiser(Optimiser):
 
     def __init__(self, param_id_obj, param_id_info, param_norm_obj, 
                  num_params, output_dir, optimiser_options=None, 
-                 automatic_differentiation=True, DEBUG=False):
+                 do_ad=True, DEBUG=False):
         """
         Initialize the SciPy minimize optimiser.
         """
         super().__init__(param_id_obj, param_id_info, param_norm_obj, 
                         num_params, output_dir, optimiser_options, DEBUG)
         
-        self.automatic_differentiation = automatic_differentiation
+        self.automatic_differentiation = do_ad
 
         # Prepare bounds
         self.param_mins = self.param_id_info["param_mins"]

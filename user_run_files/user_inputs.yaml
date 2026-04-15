@@ -24,7 +24,9 @@ model_type: cellml_only
 param_id_method: genetic_algorithm
 # param_id_method: CMA-ES
 # param_id_method: sp_minimize
-# automatic_differentiation: True # sp_minimize specific
+
+#_______ Automatic Differentiation __________
+do_ad: false
 
 # pre_time is the amount of time simulated to get to steady state
 # TODO this is not important if it is specified in the obs_data.json file

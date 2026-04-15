@@ -80,7 +80,7 @@ class CVS0DParamID():
                  params_for_id_path=None,
                  param_id_obs_path=None, sim_time=2.0, pre_time=20.0, dt=0.01,
                  solver_info=None, mcmc_options=None, optimiser_options=None, 
-                 automatic_differentiation=True, DEBUG=False,
+                 do_ad=True, DEBUG=False,
                  param_id_output_dir=None, resources_dir=None, one_rank=False):
         self.model_path = model_path
         self.param_id_method = param_id_method
@@ -196,7 +196,7 @@ class CVS0DParamID():
                                                self.obs_info, self.param_id_info, self.protocol_info,
                                                self.prediction_info, self.solver_info, dt=self.dt,
                                                optimiser_options=self.optimiser_options, 
-                                               automatic_differentiation=automatic_differentiation, 
+                                               do_ad=do_ad, 
                                                DEBUG=self.DEBUG, 
                                                model_type=self.model_type)
                 self.n_steps = self.param_id.n_steps
@@ -1259,7 +1259,7 @@ class OpencorParamID():
     def __init__(self, model_path, param_id_method,
                  obs_info, param_id_info, protocol_info, prediction_info,
                  solver_info, dt=0.01, 
-                 optimiser_options=None, automatic_differentiation=True, 
+                 optimiser_options=None, do_ad=True, 
                  DEBUG=False, model_type=None):
 
         self.model_path = model_path
@@ -1343,7 +1343,7 @@ class OpencorParamID():
         self.pred_param_importance = None
         self.pred_collinearity_idx_pairs = None
 
-        self.automatic_differentiation = automatic_differentiation
+        self.do_ad = do_ad
         
         if self.obs_info is not None:
             self.cost_type = self.obs_info["cost_type"]
@@ -1492,7 +1492,7 @@ class OpencorParamID():
                 self, self.param_id_info, self.param_norm_obj,
                 self.num_params, self.output_dir,
                 optimiser_options=self.optimiser_options,
-                automatic_differentiation=self.automatic_differentiation,
+                do_ad=self.do_ad,
                 DEBUG=self.DEBUG
             )
             optimiser.run()

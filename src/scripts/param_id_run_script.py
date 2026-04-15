@@ -36,7 +36,7 @@ def run_param_id(inp_data_dict=None):
     optimiser_options = inp_data_dict.get('optimiser_options', None)
     resources_dir = inp_data_dict['resources_dir']
     param_id_output_dir = inp_data_dict['param_id_output_dir']
-    automatic_differentiation = inp_data_dict['automatic_differentiation']
+    do_ad = inp_data_dict['do_ad']
 
 
     comm = MPI.COMM_WORLD
@@ -53,7 +53,7 @@ def run_param_id(inp_data_dict=None):
                             sim_time=sim_time, pre_time=pre_time,
                             solver_info=solver_info, dt=dt,
                             optimiser_options=optimiser_options, 
-                            automatic_differentiation=automatic_differentiation, DEBUG=DEBUG,
+                            do_ad=do_ad, DEBUG=DEBUG,
                             param_id_output_dir=param_id_output_dir, resources_dir=resources_dir)
 
     if rank == 0:
