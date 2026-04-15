@@ -196,8 +196,7 @@ class CVS0DParamID():
                                                self.obs_info, self.param_id_info, self.protocol_info,
                                                self.prediction_info, self.solver_info, dt=self.dt,
                                                optimiser_options=self.optimiser_options, 
-                                               do_ad=do_ad, 
-                                               DEBUG=self.DEBUG, 
+                                               do_ad=do_ad, DEBUG=self.DEBUG, 
                                                model_type=self.model_type)
                 self.n_steps = self.param_id.n_steps
         if self.rank == 0:
@@ -1485,6 +1484,9 @@ class OpencorParamID():
                 optimiser_options=self.optimiser_options,
                 DEBUG=self.DEBUG
             )
+            optimiser.run()
+            self.best_param_vals = optimiser.best_param_vals
+            self.best_cost = optimiser.best_cost
 
         elif self.param_id_method == 'sp_minimize':
             # Use SciPyMinimizeOptimiser for gradient-based optimization
@@ -1492,8 +1494,7 @@ class OpencorParamID():
                 self, self.param_id_info, self.param_norm_obj,
                 self.num_params, self.output_dir,
                 optimiser_options=self.optimiser_options,
-                do_ad=self.do_ad,
-                DEBUG=self.DEBUG
+                do_ad=self.do_ad, DEBUG=self.DEBUG
             )
             optimiser.run()
             self.best_param_vals = optimiser.best_param_vals

@@ -781,7 +781,7 @@ class SciPyMinimizeOptimiser(Optimiser):
         super().__init__(param_id_obj, param_id_info, param_norm_obj, 
                         num_params, output_dir, optimiser_options, DEBUG)
         
-        self.automatic_differentiation = do_ad
+        self.do_ad = do_ad
 
         # Prepare bounds
         self.param_mins = self.param_id_info["param_mins"]
@@ -803,7 +803,7 @@ class SciPyMinimizeOptimiser(Optimiser):
         print(f'Cost before gradient-based optimisation: {init_cost}')
         init_gradient = self.param_id_obj.get_jac_cost_ca(init_param_vals)
 
-        if (self.automatic_differentiation):
+        if (self.do_ad):
             def gradient_func(q):
                 p = self.param_norm_obj.unnormalise(q)
                 dJ_dp = self.param_id_obj.get_jac_cost_ca(p)
