@@ -2070,7 +2070,7 @@ class OpencorParamID():
             preds_const_vec[JJ] = np.min(preds[JJ, :])
             preds_const_vec[JJ + 1] = np.max(preds[JJ, :])
             preds_const_vec[JJ + 2] = np.mean(preds[JJ, :])
-        return preds_const_vec.
+        return preds_const_vec
     
     def build_casadi_functions(self, param_names, param_vals = None, get_all_series=False):
         self.sim_helper._create_param_subset(param_names, param_vals)

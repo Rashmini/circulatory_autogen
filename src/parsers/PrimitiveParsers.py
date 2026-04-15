@@ -156,6 +156,10 @@ class YamlFileParser(object):
         if 'param_id_method' not in inp_data_dict.keys():
             inp_data_dict['param_id_method'] = 'genetic_algorithm'
 
+        if inp_data_dict.get('param_id_method') == 'sp_minimize' and inp_data_dict.get('model_type') != 'casadi_python':
+            print(f'Parameter identification with sp_minimize requires model_type to be "casadi_python"')
+            exit()
+
         # overwrite dir paths if set in user_inputs.yaml
         if "resources_dir" in inp_data_dict.keys():
             inp_data_dict['resources_dir'] = os.path.join(user_files_dir, inp_data_dict['resources_dir'])
@@ -248,7 +252,7 @@ class YamlFileParser(object):
             inp_data_dict['sim_time'] = None
 
         # Parse and validate the solver parameter
-        # Supported solvers: CVODE_opencor (OpenCOR), CVODE_myokit (Myokit), solve_ivp methods (RK45, RK4, etc. for Python), or CasADi integrator plugins
+        # Supported solvers: CVODE_opencor (OpenCOR), CVODE_myokit (Myokit), solve_ivp (Python), or casadi_integrator (CasADi)
         
         valid_cellml_solvers = ['CVODE_opencor', 'CVODE_myokit']
         valid_cellml_methods = ['CVODE']
@@ -285,7 +289,7 @@ class YamlFileParser(object):
             if (solver_name not in valid_cellml_solvers and
                 solver_name not in valid_cpp_solvers and
                 solver_name not in valid_python_solvers and
-                 solver_name not in valid_casadi_solvers):
+                solver_name not in valid_casadi_solvers):
                 print(f'Invalid solver: {solver_name}')
                 exit()
         
@@ -345,8 +349,13 @@ class YamlFileParser(object):
                 if solver_name.startswith('CVODE'):
                     solver_method = 'CVODE'
                     inp_data_dict['solver_info']['method'] = solver_method
+                elif solver_name.startswith('casadi'):
+                    print('Method not set in solver_options, which should be set for solver casadi_integrator, '
+                          'using default method cvodes')
+                    solver_method = 'cvodes'
+                    inp_data_dict['solver_info']['method'] = solver_method
                 else:
-                    print('method not set in solver_options, which should be set for solver solve_ivp,'
+                    print('Method not set in solver_options, which should be set for solver solve_ivp,'
                         'using default method RK45')
                     solver_method = 'RK45'
                     inp_data_dict['solver_info']['method'] = solver_method
@@ -388,20 +397,6 @@ class YamlFileParser(object):
         if solver_name in valid_python_solvers and solver_method not in valid_solve_ivp_methods:
             print(f'solver method {solver_method} not compatible with solver {solver_name}, use {valid_solve_ivp_methods} for Python models')
             exit()
-
-        # CellML and Python solvers cannot be used with CasADi Python models
-        if inp_data_dict.get('model_type') == 'casadi_python' and solver_name not in valid_casadi_solvers:
-                print(f'Solver {solver_method} cannot be used with CasADi Python models (model_type="casadi_python")')
-                print(f'Use {valid_casadi_solvers} for CasADi Python models')
-                exit()
-
-        # CasADi solvers can only be used with CasADi Python models
-        if solver_method in valid_casadi_solver_plugins:
-            if inp_data_dict.get('model_type') not in ['casadi_python', None]:
-                print(f'CasADi solver {solver_method} requires model_type to be "casadi_python"')
-                print('Use CVODE_opencor (or legacy CVODE) or CVODE_myokit for CellML models')
-                print('Use CVODE or RK4 or PETSC for Cpp models')
-                exit()
 
         # CellML and Python solvers cannot be used with CasADi Python models
         if inp_data_dict.get('model_type') == 'casadi_python' and solver_name not in valid_casadi_solvers:

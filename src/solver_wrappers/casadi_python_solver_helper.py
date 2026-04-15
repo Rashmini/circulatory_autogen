@@ -29,6 +29,10 @@ class SimulationHelper:
         self.update_times(dt, 0.0, sim_time, pre_time)
         self._init_state()
 
+    def set_protocol_info(self, protocol_info):
+        """Store protocol metadata for a common helper API."""
+        self.protocol_info = protocol_info
+
     # ---- setup helpers ----
     def _load_model(self):
         spec = importlib.util.spec_from_file_location("generated_model", self.model_path)

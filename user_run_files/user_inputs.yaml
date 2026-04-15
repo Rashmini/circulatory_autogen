@@ -16,15 +16,15 @@ input_param_file: 3compartment_parameters.csv
 # cpp generation inputs
 # model_type can be cellml_only, cpp, or python, casadi_python atm 
 # model_type: cpp
-model_type: cellml_only
-# model_type: casadi_python
+# model_type: cellml_only
+model_type: casadi_python
 
 #__________ parameter identification inputs __________
 # param_id_method can be any of [genetic_algorithm, CMA-ES, bayesian, sp_minimize]
-param_id_method: genetic_algorithm
+# param_id_method: genetic_algorithm
 # param_id_method: CMA-ES
-# param_id_method: sp_minimize
-# automatic_differentiation: True # sp_minimize specific
+param_id_method: sp_minimize
+automatic_differentiation: True # sp_minimize specific
 
 # pre_time is the amount of time simulated to get to steady state
 # TODO this is not important if it is specified in the obs_data.json file
@@ -64,7 +64,7 @@ solver_info:
   MaximumStep: 0.0001
   MaximumNumberOfSteps: 5000
   # method: RK45 # any method for solve_ivp
-  # method: cvodes # any method for casadi ('cvodes', 'idas', 'collocation', 'rk')
+  method: cvodes # any method for casadi ('cvodes', 'idas', 'collocation', 'rk')
 
 # param_id_obs_path needs to be an absolute path.
 # This for 3compartment
@@ -90,7 +90,7 @@ optimiser_options:
 
 #______ debug optimiser options (used when DEBUG is True) ___________
 debug_optimiser_options:
-  num_calls_to_function: 30 # TODO change back to 30 for tests
+  num_calls_to_function: 10000 # TODO change back to 30 for tests
   cost_convergence: 0.001
   cost_type: MSE
   # Note: When DEBUG is True, debug_optimiser_options overrides optimiser_options
