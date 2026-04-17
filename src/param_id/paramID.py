@@ -2,8 +2,6 @@
 @author: Finbar J. Argus
 '''
 
-from statistics import mode
-
 import numpy as np
 import os
 import sys

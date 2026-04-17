@@ -25,7 +25,8 @@ def series_to_constant(func):
 def max(x, series_output=False):
     if series_output:
         return x
-    return np.max(x)
+    else:
+        return np.max(x)
 
 @operation(mode="numpy")
 @series_to_constant
@@ -57,7 +58,8 @@ def max_minus_min(x, series_output=False):
 def max(x, series_output=False):
     if series_output:
         return x
-    return ca.mmax(x)
+    else:
+        return ca.mmax(x)
 
 @operation(mode="casadi")
 @series_to_constant
