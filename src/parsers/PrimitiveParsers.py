@@ -45,36 +45,12 @@ class scriptFunctionParser(object):
         '''
         Constructor
         '''
-    
-    def get_operation_funcs_dict(self):
+
+    def get_operation_funcs_dict(self, mode="numpy"):
         import operation_funcs
         import operation_funcs_user
-        operation_funcs_dict = {}
-        funcs = [item for item in dir(operation_funcs) if callable(getattr(operation_funcs, item))]
-        funcs_user = [item for item in dir(operation_funcs_user) if callable(getattr(operation_funcs_user, item))]
 
-
-        # create dict with keys of string of function names
-        for func in funcs:
-            operation_funcs_dict[func] = getattr(operation_funcs, func)
-        for func in funcs_user:
-            operation_funcs_dict[func] = getattr(operation_funcs_user, func)
-
-        # add a do nothing function to the dict
-        operation_funcs_dict[None] = lambda x: x
-        
-        return operation_funcs_dict
-    
-    def get_operation_funcs_dict_ca(self):
-        import operation_funcs_ca
-        operation_funcs_dict = {}
-        funcs = [item for item in dir(operation_funcs_ca) if callable(getattr(operation_funcs_ca, item))]
-
-        # create dict with keys of string of function names
-        for func in funcs:
-            operation_funcs_dict[func] = getattr(operation_funcs_ca, func)
-        
-        return operation_funcs_dict
+        return operation_funcs.OPERATION_FUNCS[mode]
     
     def add_user_operation_func(self, operation_funcs_dict, func):
         operation_funcs_dict[func.__name__] = func
@@ -83,33 +59,11 @@ class scriptFunctionParser(object):
     def add_user_cost_func(self, cost_funcs_dict, func):
         cost_funcs_dict[func.__name__] = func
         return cost_funcs_dict
-
-    def get_cost_funcs_dict(self):
-        # import cost_funcs # currently all costs are in cost_funcs_user
-        import cost_funcs_user
-        cost_funcs_dict = {}
-        # funcs = [item for item in dir(cost_funcs) if callable(getattr(cost_funcs, item))]
-        funcs_user = [item for item in dir(cost_funcs_user) if callable(getattr(cost_funcs_user, item))]
-
-        # create dict with keys of string of function names
-        # for func in funcs:
-        #     cost_funcs_dict[func] = getattr(cost_funcs, func)
-        for func in funcs_user:
-            cost_funcs_dict[func] = getattr(cost_funcs_user, func)
-        
-        return cost_funcs_dict
     
-    def get_cost_funcs_dict_ca(self):
-        # import cost_funcs # currently all costs are in cost_funcs_user
-        import cost_funcs_ca
-        cost_funcs_dict = {}
-        funcs_user = [item for item in dir(cost_funcs_ca) if callable(getattr(cost_funcs_ca, item))]
+    def get_cost_funcs_dict(self, mode="numpy"):
+        import cost_funcs_user
 
-        # create dict with keys of string of function names
-        for func in funcs_user:
-            cost_funcs_dict[func] = getattr(cost_funcs_ca, func)
-        
-        return cost_funcs_dict
+        return cost_funcs_user.COST_FUNCS[mode]
 
 class YamlFileParser(object):
     '''

@@ -2,6 +2,8 @@
 @author: Finbar J. Argus
 '''
 
+from statistics import mode
+
 import numpy as np
 import os
 import sys
@@ -80,7 +82,7 @@ class CVS0DParamID():
                  params_for_id_path=None,
                  param_id_obs_path=None, sim_time=2.0, pre_time=20.0, dt=0.01,
                  solver_info=None, mcmc_options=None, optimiser_options=None, 
-                 do_ad=True, DEBUG=False,
+                 do_ad=False, DEBUG=False,
                  param_id_output_dir=None, resources_dir=None, one_rank=False):
         self.model_path = model_path
         self.param_id_method = param_id_method
@@ -1258,7 +1260,7 @@ class OpencorParamID():
     def __init__(self, model_path, param_id_method,
                  obs_info, param_id_info, protocol_info, prediction_info,
                  solver_info, dt=0.01, 
-                 optimiser_options=None, do_ad=True, 
+                 optimiser_options=None, do_ad=False, 
                  DEBUG=False, model_type=None):
 
         self.model_path = model_path
@@ -1279,12 +1281,9 @@ class OpencorParamID():
 
         self.sfp = scriptFunctionParser()
 
-        if self.model_type == 'casadi_python':
-            self.operation_funcs_dict = self.sfp.get_operation_funcs_dict_ca()
-            self.cost_funcs_dict = self.sfp.get_cost_funcs_dict_ca()
-        else:
-            self.operation_funcs_dict = self.sfp.get_operation_funcs_dict()
-            self.cost_funcs_dict = self.sfp.get_cost_funcs_dict()
+        mode = "casadi" if self.model_type == "casadi_python" else "numpy"
+        self.operation_funcs_dict = self.sfp.get_operation_funcs_dict(mode)
+        self.cost_funcs_dict = self.sfp.get_cost_funcs_dict(mode)
 
         # set up opencor simulation
         self.dt = dt
@@ -1708,19 +1707,19 @@ class OpencorParamID():
     def get_cost_from_operands(self, operands_outputs, exp_idx = 0, sub_idx = 0):
 
         if self.model_type == 'casadi_python':
-            casadi = True
+            is_symbolic = True
         else:
-            casadi = False
+            is_symbolic = False
 
-        obs_dict = self.get_obs_output_dict(operands_outputs, casadi=casadi)
+        obs_dict = self.get_obs_output_dict(operands_outputs, is_symbolic=is_symbolic)
         # calculate error between the observables of this set of parameters
         # and the ground truth
         
-        cost = self.cost_calc(obs_dict, exp_idx=exp_idx, sub_idx=sub_idx, casadi=casadi)
+        cost = self.cost_calc(obs_dict, exp_idx=exp_idx, sub_idx=sub_idx, is_symbolic=is_symbolic)
 
         return cost
 
-    def cost_calc(self, obs_dict, exp_idx=0, sub_idx=0, casadi=False):
+    def cost_calc(self, obs_dict, exp_idx=0, sub_idx=0, is_symbolic=False):
         
 
         const = obs_dict['const']
@@ -1753,7 +1752,7 @@ class OpencorParamID():
             phase = None
 
         # TODO: Fix for series, amp, phase, and val_for_prob_dist
-        if casadi:
+        if is_symbolic:
             cost = ca.SX(0)
             if const is not None:
                 for const_idx in range(const.size1()):
@@ -1897,14 +1896,14 @@ class OpencorParamID():
 
         return cost
 
-    def get_obs_output_dict(self, operands_outputs, get_all_series=False, casadi=False):
+    def get_obs_output_dict(self, operands_outputs, get_all_series=False, is_symbolic=False):
         if operands_outputs == None:
             if get_all_series:
                 return None, None
             else:
                 return None
 
-        if casadi:
+        if is_symbolic:
             # TODO: Test series, amp, phase and prob_dist_vec
             obs_const_vec = ca.SX.zeros(len(self.obs_info["ground_truth_const"]), 1)
             obs_series_list_of_arrays = [None]*len(self.obs_info["ground_truth_series"])
@@ -2086,7 +2085,7 @@ class OpencorParamID():
         obs_meta = []
 
         for i, obs_item in enumerate(self.obs_dict_symb):
-            output_dict = self.get_obs_output_dict(obs_item, get_all_series, casadi=True)
+            output_dict = self.get_obs_output_dict(obs_item, get_all_series, is_symbolic=True)
             if get_all_series: 
                 obs_dict_item, obs_series_array_all = output_dict
                 self.obs_series_array_all_vec = ca.vertcat(*obs_series_array_all)
