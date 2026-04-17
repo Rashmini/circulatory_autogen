@@ -252,19 +252,15 @@ class SimulationHelper:
             data = self.state_traj_symb[self.state_name_to_idx[name], :]
             return data[self.pre_steps:]
         if name in self.var_name_to_idx:
-            idx = self.var_name_to_idx[name]
-            data = self.var_traj_symb[idx, :]
+            data = self.var_traj_symb[self.var_name_to_idx[name], :]
             return data[self.pre_steps:]
         # attempt to resolve common alternative namings (e.g., "a/b" vs "a_b")
         kind, idx_res = self._resolve_name(name)
         if kind == "state":
-            resolved_name = self.state_idx_to_name[idx_res]
             data = self.state_traj_symb[idx_res, :]
             return data[self.pre_steps:]
         if kind == "var":
-            resolved_name = self.var_idx_to_name[idx_res]
-            idx = self.var_name_to_idx[name]
-            data = self.var_traj_symb[idx, :]
+            data = self.var_traj_symb[idx_res, :]
             return data[self.pre_steps:]
         raise ValueError(f"variable {name} not found")
 
