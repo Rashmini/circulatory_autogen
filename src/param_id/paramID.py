@@ -1528,7 +1528,7 @@ class OpencorParamID():
         return
     
     def get_cost_obs_and_pred_from_params(self, param_vals, reset=True, 
-                                          only_one_exp=-1, pred_names=None):
+                                          only_one_exp=-1, pred_names=None, do_ad=False):
 
         pred_outputs_list = []
         # loop through subexperiments
@@ -1538,6 +1538,10 @@ class OpencorParamID():
             exp_idxs_to_run = range(self.protocol_info["num_experiments"])
         else:
             exp_idxs_to_run = [only_one_exp]
+
+        # TODO: Test AD with multiple subexperiments
+        if do_ad:
+            reset = False 
             
         operands_outputs_list = []
         for exp_idx in range(self.protocol_info["num_experiments"]):
@@ -1614,8 +1618,8 @@ class OpencorParamID():
 
         return cost, operands_outputs_list, pred_outputs_list
 
-    def get_cost_and_obs_from_params(self, param_vals, reset=True, only_one_exp=-1):
-        cost, obs, _ = self.get_cost_obs_and_pred_from_params(param_vals, reset=reset, only_one_exp=only_one_exp)
+    def get_cost_and_obs_from_params(self, param_vals, reset=True, only_one_exp=-1, do_ad=False):
+        cost, obs, _ = self.get_cost_obs_and_pred_from_params(param_vals, reset=reset, only_one_exp=only_one_exp, do_ad=do_ad)
         return cost, obs
 
     def get_cost_from_params(self, param_vals, reset=True):
@@ -2076,7 +2080,7 @@ class OpencorParamID():
     def build_casadi_functions(self, param_names, param_vals = None, get_all_series=False):
         self.sim_helper._create_param_subset(param_names, param_vals)
 
-        self.cost_symb, self.obs_dict_symb = self.get_cost_and_obs_from_params(param_vals, reset=False)
+        self.cost_symb, self.obs_dict_symb = self.get_cost_and_obs_from_params(param_vals, do_ad=True)
 
         obs_outputs = []
         obs_meta = []

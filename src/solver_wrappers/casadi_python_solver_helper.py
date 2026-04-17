@@ -3,8 +3,6 @@ import numpy as np
 import copy
 import sys
 import casadi as ca
-DEBUG = False
-
 
 class SimulationHelper:
     """
@@ -28,6 +26,7 @@ class SimulationHelper:
         self._load_model()
         self.update_times(dt, 0.0, sim_time, pre_time)
         self._init_state()
+        self._has_run = False
 
     def set_protocol_info(self, protocol_info):
         """Store protocol metadata for a common helper API."""
@@ -200,6 +199,29 @@ class SimulationHelper:
                     raise ValueError(f"parameter name {name} not found in states or variables")
         self.model.compute_computed_constants(self.variables)
 
+    def _post_process(self):
+        # store trajectories for requested variables
+        var_names = list(self.var_name_to_idx.keys())
+        var_cols = []
+
+        state_cols = ca.horzsplit(self.state_traj_symb, 1)
+
+        for ti, state_vec in zip(self.tSim, state_cols):
+            states = state_vec
+            rates = [0.0]*self.STATE_COUNT
+            vars_symb_copy = copy.copy(self.variables_all_symb)
+            self.model.compute_rates(ti, states, rates, vars_symb_copy)
+            self.model.compute_variables(ti, states, rates, vars_symb_copy)
+
+            var_vec = ca.vertcat(*[
+                vars_symb_copy[self.var_name_to_idx[name]]
+                for name in var_names
+            ])
+
+            var_cols.append(var_vec)
+
+        self.var_traj_symb = ca.horzcat(*var_cols)
+
     # ---- simulation ----
     def run(self):
         ode = {
@@ -213,6 +235,9 @@ class SimulationHelper:
 
         res = self.F_map(x0=self.states_symb, p=self.variables_symb)
         self.state_traj_symb = ca.horzcat(self.states_symb, res["xf"])
+
+        self._has_run = True
+        self._post_process()
         
         return True
 
@@ -227,7 +252,8 @@ class SimulationHelper:
             data = self.state_traj_symb[self.state_name_to_idx[name], :]
             return data[self.pre_steps:]
         if name in self.var_name_to_idx:
-            data = self.var_traj[name]
+            idx = self.var_name_to_idx[name]
+            data = self.var_traj_symb[idx, :]
             return data[self.pre_steps:]
         # attempt to resolve common alternative namings (e.g., "a/b" vs "a_b")
         kind, idx_res = self._resolve_name(name)
@@ -237,7 +263,8 @@ class SimulationHelper:
             return data[self.pre_steps:]
         if kind == "var":
             resolved_name = self.var_idx_to_name[idx_res]
-            data = self.var_traj[resolved_name]
+            idx = self.var_name_to_idx[name]
+            data = self.var_traj_symb[idx, :]
             return data[self.pre_steps:]
         raise ValueError(f"variable {name} not found")
 
@@ -254,6 +281,27 @@ class SimulationHelper:
 
     def get_all_results(self, flatten=False):
         return self.get_results(self.get_all_variable_names(), flatten=flatten)
+    
+    def get_all_results_dict(self):
+        if self._has_run:
+            self._last_results_dict = self._collect_all_results_dict()
+            return {name: val for name, val in self._last_results_dict.items()}
+        if self._last_results_dict is not None:
+            return {name: val for name, val in self._last_results_dict.items()}
+        raise RuntimeError("Simulation has not been run yet.")
+
+    def _collect_all_results_dict(self):
+        variable_names = self.get_all_variable_names()
+        values = self.get_results(variable_names, flatten=True)
+        values = [
+            ca.reshape(v, -1, 1) if isinstance(v, ca.SX) else v
+            for v in values
+        ]
+
+        self.var_func = ca.Function('var_func', [self.states_symb, self.variables_symb], values)
+        values = self.var_func(self.states, self.variables)
+
+        return {name: val for name, val in zip(variable_names, values)}
 
     def _create_param_subset(self, param_names, param_vals = None):
         param_names = [x[0] for x in param_names]
