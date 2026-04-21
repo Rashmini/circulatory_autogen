@@ -718,3 +718,304 @@ def test_compare_optimisers(base_user_inputs, resources_dir, temp_output_dir, mp
     
     mpi_comm.Barrier()
 
+
+@pytest.mark.integration
+@pytest.mark.slow
+@pytest.mark.mpi
+def test_param_id_lotka_volterra_sp_minimize_succeeds(base_user_inputs, resources_dir, temp_output_dir, mpi_comm):
+    """
+    Test that parameter identification succeeds for Lotka-Volterra model
+    using CasADi Python model type with casadi_integrator solver.
+    
+    The Lotka-Volterra model is a simple predator-prey model with two states (x, y).
+    This test verifies that:
+    1. CasADi Python model can be generated successfully
+    2. Parameter identification runs without errors
+    3. Output files are created and contain valid values
+    
+    Args:
+        base_user_inputs: Base user inputs configuration fixture
+        resources_dir: Resources directory fixture
+        temp_output_dir: Temporary output directory fixture
+        mpi_comm: MPI communicator fixture
+    """
+    rank = mpi_comm.Get_rank()
+
+    config = base_user_inputs.copy()
+    config.update({
+        'file_prefix': 'Lotka_Volterra',
+        'input_param_file': 'Lotka_Volterra_parameters.csv',
+        'model_type': 'casadi_python',
+        'solver': 'casadi_integrator',
+        'param_id_method': 'sp_minimize',
+        'do_ad': True,
+        'pre_time': 0.0,
+        'sim_time': 0.3,
+        'dt': 0.01,
+        'DEBUG': True,
+        'do_mcmc': False,
+        'plot_predictions': False,
+        'do_ia': False,
+        'solver_info': {
+            'MaximumStep': 0.001,
+            'MaximumNumberOfSteps': 5000,
+            'method': 'cvodes',
+        },
+        'param_id_obs_path': os.path.join(resources_dir, 'Lotka_Volterra_obs_data.json'),
+        'param_id_output_dir': temp_output_dir,
+        'optimiser_options': {
+            'num_calls_to_function': 100,
+            'cost_convergence': 1e-3,
+        },
+    })
+
+    # Ensure CasADi Python model is generated on rank 0
+    if rank == 0:
+        success = generate_with_new_architecture(False, config)
+        assert success, "CasADi Python model generation should succeed for Lotka-Volterra"
+    
+    mpi_comm.Barrier()
+
+    # Run parameter identification
+    run_param_id(config)
+
+    # Verify output on rank 0
+    if rank == 0:
+        output_dir = os.path.join(
+            temp_output_dir,
+            f"{config['param_id_method']}_Lotka_Volterra_Lotka_Volterra_obs_data"
+        )
+        assert os.path.exists(output_dir), f"Output directory should exist: {output_dir}"
+    
+        # Verify cost file exists and contains valid value
+        cost_file = os.path.join(output_dir, 'best_cost.npy')
+        assert os.path.exists(cost_file), f"Cost file should exist: {cost_file}"
+        
+        cost = np.load(cost_file)
+        assert np.isfinite(cost), f"Cost should be finite, got {cost}"
+        assert cost >= 0, f"Cost should be non-negative, got {cost}"
+        
+        # Verify parameters file exists and contains valid values
+        params_file = os.path.join(output_dir, 'best_param_vals.npy')
+        assert os.path.exists(params_file), f"Parameters file should exist: {params_file}"
+        
+        params = np.load(params_file)
+        assert params.shape[0] > 0, "Should have at least one parameter"
+        assert np.all(np.isfinite(params)), "All parameter values should be finite"
+    
+    mpi_comm.Barrier()
+
+
+@pytest.mark.integration
+@pytest.mark.slow
+@pytest.mark.mpi
+def test_param_id_lotka_volterra_sp_minimize_ad_vs_fd(base_user_inputs, resources_dir, temp_output_dir, mpi_comm):
+    """
+    Test parameter identification with sp_minimize comparing automatic differentiation (AD)
+    vs finite difference (FD) gradient approximation for the Lotka-Volterra model.
+    
+    This test verifies that:
+    1. Parameter ID runs successfully with both AD (do_ad=True) and FD (do_ad=False) gradient methods
+    2. The resulting costs are within 0.001 tolerance of each other
+    
+    Args:
+        base_user_inputs: Base user inputs configuration fixture
+        resources_dir: Resources directory fixture
+        temp_output_dir: Temporary output directory fixture
+        mpi_comm: MPI communicator fixture
+    """
+    rank = mpi_comm.Get_rank()
+    
+    # Configuration shared between AD and FD runs
+    base_config = base_user_inputs.copy()
+    base_config.update({
+        'file_prefix': 'Lotka_Volterra',
+        'input_param_file': 'Lotka_Volterra_parameters.csv',
+        'model_type': 'casadi_python',
+        'solver': 'casadi_integrator',
+        'param_id_method': 'sp_minimize',
+        'pre_time': 0.0,
+        'sim_time': 5.0,
+        'dt': 0.01,
+        'DEBUG': True,
+        'do_mcmc': False,
+        'plot_predictions': False,
+        'do_ia': False,
+        'solver_info': {
+            'MaximumStep': 0.001,
+            'MaximumNumberOfSteps': 5000,
+            'method': 'cvodes',
+        },
+        'param_id_obs_path': os.path.join(resources_dir, 'Lotka_Volterra_obs_data.json'),
+        'optimiser_options': {
+            'num_calls_to_function': 100,
+            'cost_convergence': 1e-3,
+        },
+    })
+    
+    # Generate model on rank 0 (needed for both runs)
+    if rank == 0:
+        success = generate_with_new_architecture(False, base_config)
+        assert success, "CasADi Python model generation should succeed"
+    
+    mpi_comm.Barrier()
+
+    # Run 1: sp_minimize with Automatic Differentiation (AD)
+    config_ad = base_config.copy()
+    config_ad.update({
+        'do_ad': True,
+        'param_id_output_dir': os.path.join(temp_output_dir, 'ad_run'),
+    })
+    
+    run_param_id(config_ad)
+    mpi_comm.Barrier()
+    
+    # Run 2: sp_minimize with Finite Difference (FD)
+    config_fd = base_config.copy()
+    config_fd.update({
+        'do_ad': False,
+        'param_id_output_dir': os.path.join(temp_output_dir, 'fd_run'),
+    })
+    
+    run_param_id(config_fd)
+    mpi_comm.Barrier()
+
+    # Compare results on rank 0
+    if rank == 0:
+        output_dir_ad = os.path.join(
+            config_ad['param_id_output_dir'],
+            'sp_minimize_Lotka_Volterra_Lotka_Volterra_obs_data'
+        )
+        output_dir_fd = os.path.join(
+            config_fd['param_id_output_dir'],
+            'sp_minimize_Lotka_Volterra_Lotka_Volterra_obs_data'
+        )
+        
+        # Verify both output directories exist
+        assert os.path.exists(output_dir_ad), f"AD output directory should exist: {output_dir_ad}"
+        assert os.path.exists(output_dir_fd), f"FD output directory should exist: {output_dir_fd}"
+        
+        # Load costs from both runs
+        cost_file_ad = os.path.join(output_dir_ad, 'best_cost.npy')
+        cost_file_fd = os.path.join(output_dir_fd, 'best_cost.npy')
+        
+        assert os.path.exists(cost_file_ad), f"AD cost file should exist: {cost_file_ad}"
+        assert os.path.exists(cost_file_fd), f"FD cost file should exist: {cost_file_fd}"
+        
+        cost_ad = float(np.load(cost_file_ad))
+        cost_fd = float(np.load(cost_file_fd))
+        
+        # Assert costs are finite
+        assert np.isfinite(cost_ad), f"AD cost should be finite, got {cost_ad}"
+        assert np.isfinite(cost_fd), f"FD cost should be finite, got {cost_fd}"
+        assert cost_ad >= 0, f"AD cost should be non-negative, got {cost_ad}"
+        assert cost_fd >= 0, f"FD cost should be non-negative, got {cost_fd}"
+        
+        # ASSERTION: Cost difference between AD and FD should be below tolerance
+        cost_diff = abs(cost_ad - cost_fd)
+        cost_tolerance = 0.001
+        assert cost_diff < cost_tolerance, (
+            f"Cost difference between AD and FD should be < {cost_tolerance}, "
+            f"but got difference of {cost_diff:.6e} (AD: {cost_ad:.6e}, FD: {cost_fd:.6e})"
+        )
+        
+        # Load parameters from both runs
+        params_file_ad = os.path.join(output_dir_ad, 'best_param_vals.npy')
+        params_file_fd = os.path.join(output_dir_fd, 'best_param_vals.npy')
+        
+        assert os.path.exists(params_file_ad), f"AD params file should exist: {params_file_ad}"
+        assert os.path.exists(params_file_fd), f"FD params file should exist: {params_file_fd}"
+        
+        params_ad = np.load(params_file_ad)
+        params_fd = np.load(params_file_fd)
+        
+        # Verify parameter counts match
+        assert len(params_ad) == len(params_fd), (
+            f"Parameter count mismatch: AD has {len(params_ad)}, FD has {len(params_fd)}"
+        )
+        
+        # Assert all parameters are finite
+        assert np.all(np.isfinite(params_ad)), "All AD parameter values should be finite"
+        assert np.all(np.isfinite(params_fd)), "All FD parameter values should be finite"
+        
+        print(f"\n=== Lotka-Volterra AD vs FD Comparison ===")
+        print(f"AD cost: {cost_ad:.6e}")
+        print(f"FD cost: {cost_fd:.6e}")
+        print(f"Cost difference: {cost_diff:.6e} (tolerance: {cost_tolerance})")
+        print(f"AD parameters: {params_ad}")
+        print(f"FD parameters: {params_fd}")
+    
+    mpi_comm.Barrier()
+
+
+@pytest.mark.integration
+@pytest.mark.slow
+@pytest.mark.mpi
+def test_param_id_3compartment_sp_minimize_fails_with_conditionals(base_user_inputs, resources_dir, temp_output_dir, mpi_comm):
+    """
+    Test that parameter identification with sp_minimize using automatic differentiation (AD)
+    fails for 3compartment model due to conditional statements in the generated Python code.
+
+    The 3compartment model contains conditional statements (if-else blocks) that CasADi
+    cannot handle when computing symbolic derivatives. This test verifies that attempting
+    parameter identification with AD results in a clear, informative error message.
+
+    Expected behavior:
+    - Parameter ID should fail during optimization when CasADi tries to evaluate conditionals
+    - Error message should contain: "Cannot compute the truth value of a CasADi SXElem symbolic expression"
+    - This demonstrates the known limitation: CasADi AD works best with smooth, differentiable functions
+
+    Args:
+        base_user_inputs: Base user inputs configuration fixture
+        resources_dir: Resources directory fixture
+        temp_output_dir: Temporary output directory fixture
+        mpi_comm: MPI communicator fixture
+    """
+    rank = mpi_comm.Get_rank()
+
+    config = base_user_inputs.copy()
+    config.update({
+        'file_prefix': '3compartment',
+        'input_param_file': '3compartment_parameters.csv',
+        'model_type': 'casadi_python',
+        'solver': 'casadi_integrator',
+        'param_id_method': 'sp_minimize',
+        'do_ad': True,
+        'pre_time': 0.5,
+        'sim_time': 0.3,
+        'dt': 0.01,
+        'DEBUG': True,
+        'do_mcmc': False,
+        'plot_predictions': False,
+        'do_ia': False,
+        'solver_info': {
+            'MaximumStep': 0.001,
+            'MaximumNumberOfSteps': 5000,
+            'method': 'cvodes',
+        },
+        'param_id_obs_path': os.path.join(resources_dir, '3compartment_obs_data.json'),
+        'param_id_output_dir': temp_output_dir,
+        'optimiser_options': {
+            'num_calls_to_function': 100,
+            'cost_convergence': 1e-3,
+        },
+    })
+
+    # Generate CasADi Python model
+    if rank == 0:
+        success = generate_with_new_architecture(False, config)
+        assert success, "CasADi Python model generation should succeed"
+    mpi_comm.Barrier()
+
+    # Attempt parameter identification - this should fail due to conditionals
+    with pytest.raises(RuntimeError) as excinfo:
+        run_param_id(config)
+
+    # Verify the specific CasADi error message
+    error_msg = str(excinfo.value)
+    expected_error = "Cannot compute the truth value of a CasADi SXElem symbolic expression"
+
+    assert expected_error in error_msg, (
+        f"Expected CasADi error about truth value of symbolic expression. "
+        f"Got: {error_msg}"
+    )

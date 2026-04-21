@@ -1410,13 +1410,8 @@ class OpencorParamID():
         
         if rank == 0:
             print(f'Running parameter identification across {num_procs} MPI rank(s)')
-            if self.param_id_method == 'sp_minimize':
-                if num_procs != 1:
-                    print("ERROR Use only 1 processor for parameter identification with sp_minimize.")
-                    comm.Abort()
-            else:
-                if num_procs == 1:
-                    print("WARNING Running in serial, are you sure you want to be a snail?")
+            if num_procs == 1:
+                print('WARNING Running in serial, are you sure you want to be a snail?')
             # save date as identifier for the param_id
             np.save(os.path.join(self.output_dir, 'date'), date.today().strftime("%d_%m_%Y"))
 

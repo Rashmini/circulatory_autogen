@@ -59,11 +59,11 @@ class SimulationHelper:
         self.rates = self.model.create_states_array()
         self.variables = self.model.create_variables_array()
 
+        self._patch_math_functions()
+
         self.states_symb = self._compute_states_symb()
         self.variables_all_symb = self._compute_all_variables_symb()
         self.variables_all_symb, self.rates_symb = self._compute_rates_symb()
-
-        self._patch_math_functions()
 
         self.model.initialise_variables(self.states, self.rates, self.variables)
         self.model.compute_computed_constants(self.variables)
@@ -101,6 +101,7 @@ class SimulationHelper:
         self.model.compute_rates(self.start_time, self.states, self.rates, self.variables)
         return ca.vertcat(*self.variables), ca.vertcat(*self.rates)
     
+    # Patch math functions to use CasADi versions for symbolic compatibility. Add more functions as needed.
     def _patch_math_functions(self):
         cellml_math_map = {
             "log": ca.log,
@@ -109,6 +110,8 @@ class SimulationHelper:
             "cos": ca.cos,
             "tan": ca.tan,
             "sqrt": ca.sqrt,
+            "floor": ca.floor,
+            "pow": ca.power,
         }
         for name, func in cellml_math_map.items():
             setattr(self.model, name, func)
