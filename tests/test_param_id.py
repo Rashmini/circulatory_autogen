@@ -1085,7 +1085,7 @@ def test_param_id_lotka_volterra_sp_minimize_gt_vs_calculated_params(base_user_i
             elif item["variable"] == "Lotka_Volterra/y":
                 item["value"] = round(float(noisy_y.max()), 2)
 
-        obs_data_path = os.path.join(temp_output_dir, 'Lotka_Volterra_synthetic_obs_data.json')
+        obs_data_path = os.path.join(temp_output_dir, 'Lotka_Volterra_obs_data.json')
         with open(obs_data_path, 'w') as f:
             json.dump(obs_data, f, indent=2)
         
@@ -1110,7 +1110,7 @@ def test_param_id_lotka_volterra_sp_minimize_gt_vs_calculated_params(base_user_i
         
         output_dir = os.path.join(
             temp_output_dir,
-            f"sp_minimize_Lotka_Volterra_Lotka_Volterra_synthetic_obs_data"
+            f"sp_minimize_Lotka_Volterra_Lotka_Volterra_obs_data"
         )
         
         assert os.path.exists(output_dir), f"Output directory should exist: {output_dir}"
