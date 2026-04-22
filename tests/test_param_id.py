@@ -1090,6 +1090,8 @@ def test_param_id_lotka_volterra_sp_minimize_gt_vs_calculated_params(base_user_i
             json.dump(obs_data, f, indent=2)
         
         print(f"Created observational data and saved to {obs_data_path}")
+
+        obs_data_path = mpi_comm.bcast(obs_data_path, root=0)
         
         # Update config with synthetic observational data path
         config['param_id_obs_path'] = obs_data_path
