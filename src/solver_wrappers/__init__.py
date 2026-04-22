@@ -36,6 +36,7 @@ def get_simulation_helper(model_path: str = None, solver: str = None,
     - CVODE_opencor: Use OpenCOR solver CVODE for CellML models (default)
     - CVODE_myokit: Use Myokit CVODE solver for CellML models
     - solve_ivp: methods (RK45, BDF, etc.): Use Python/SciPy solver for Python models
+    - casadi_integrator: methods (cvodes, idas, collocation, rk): Use CasADi integrator for CasADi Python models
     """
     # Define valid solver types
     cellml_solvers = ['CVODE_opencor', 'CVODE_myokit']
@@ -77,7 +78,7 @@ def get_simulation_helper(model_path: str = None, solver: str = None,
             raise RuntimeError("CasADi solver requested but CasADi is not available")
     elif solver is not None:
         # Unknown solver type
-        raise ValueError(f"Unknown solver {solver}. Valid options are: {cellml_solvers} for CellML models and {python_solvers} for Python models")
+        raise ValueError(f"Unknown solver {solver}. Valid options are: {cellml_solvers} for CellML models, {python_solvers} for Python models, and {casadi_solvers} for CasADi Python models.")
 
     # Backward compatibility logic
     if is_python_model:
