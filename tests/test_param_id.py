@@ -1017,6 +1017,8 @@ def test_param_id_lotka_volterra_sp_minimize_gt_vs_calculated_params(base_user_i
             'cost_convergence': 1e-3,
         },
     })
+
+    obs_data_path = None
     
     if rank == 0:
         
@@ -1091,13 +1093,13 @@ def test_param_id_lotka_volterra_sp_minimize_gt_vs_calculated_params(base_user_i
         
         print(f"Created observational data and saved to {obs_data_path}")
 
-        obs_data_path = mpi_comm.bcast(obs_data_path, root=0)
-        
-        # Update config with synthetic observational data path
-        config['param_id_obs_path'] = obs_data_path
-        config['param_id_output_dir'] = temp_output_dir
-    
+    obs_data_path = mpi_comm.bcast(obs_data_path, root=0)
+
     mpi_comm.Barrier()
+    
+    # Update config with synthetic observational data path
+    config['param_id_obs_path'] = obs_data_path
+    config['param_id_output_dir'] = temp_output_dir
     
     # ---- Step 4: Run parameter identification ----
     if rank == 0:
@@ -1304,6 +1306,8 @@ def test_param_id_lotka_volterra_sp_minimize_numpy_only_operation(base_user_inpu
             'cost_convergence': 1e-3,
         },
     })
+
+    obs_data_path = None
     
     if rank == 0:
         success = generate_with_new_architecture(False, config)
@@ -1325,12 +1329,14 @@ def test_param_id_lotka_volterra_sp_minimize_numpy_only_operation(base_user_inpu
         with open(obs_data_path, 'w') as f:
             json.dump(obs_data, f, indent=2)
         
-        # Update config with this observational data path
-        config['param_id_obs_path'] = obs_data_path
-        config['param_id_output_dir'] = temp_output_dir
-    
+    obs_data_path = mpi_comm.bcast(obs_data_path, root=0)
+
     mpi_comm.Barrier()
-    
+
+    # Update config with this observational data path
+    config['param_id_obs_path'] = obs_data_path
+    config['param_id_output_dir'] = temp_output_dir
+
     # Attempt parameter identification - this should fail due to numpy-only operation
     # not being available in casadi mode 
     with pytest.raises((RuntimeError, KeyError, ValueError)) as excinfo:
