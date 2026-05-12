@@ -52,22 +52,22 @@ def gaussian_MLE(output, desired_mean, std, weight):
     
     return cost
 
-@operation(mode="casadi")
-@is_MLE
-def gaussian_MLE(output, desired_mean, std, weight):
-    cost = ca.power((output - desired_mean)/std, 2)*weight
-    if hasattr(output, '__len__'):
-        # if entry is a vector then turn the vector of costs for each data point into a average cost
-        cost = ca.sum(cost)/len(output)
-    
-    return cost
-
 # TODO we need to create derivative functions for each cost with respect to the outputs so that we can pass 
 
-@operation(mode="both")
+@operation(mode="numpy")
 def MSE(*args, **kwargs):
     # The mean squared error cost is the same as the 
     return gaussian_MLE(*args, **kwargs)
+
+@operation(mode="casadi")
+@is_MLE
+def MSE(output, desired_mean, std, weight):
+    cost = ca.power((output - desired_mean)/std, 2)*weight
+    if hasattr(output, '__len__'):
+        # if entry is a vector then turn the vector of costs for each data point into a average cost
+        cost = ca.sum1(cost)/len(output)
+    
+    return cost
 
 @operation(mode="numpy")
 @is_MLE
